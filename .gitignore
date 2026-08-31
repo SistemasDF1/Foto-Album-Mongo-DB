@@ -26,6 +26,10 @@ mongo db-fonts/
 MongoDB-selected-assets/
 *.zip
 
+# Muestras originales de los estilos (varios MB): en public/img/estilos/ están
+# ya optimizadas
+Stylo_dibujo/
+
 # Documentos de trabajo
 *.docx
 ~$*
@@ -34,6 +38,7 @@ MongoDB-selected-assets/
 # La app solo usa public/img/mongodb/, así que se versiona unicamente eso.
 public/img/*
 !public/img/mongodb/
+!public/img/estilos/
 public/kyndryl/
 public/qrious.min.js
 public/icons/

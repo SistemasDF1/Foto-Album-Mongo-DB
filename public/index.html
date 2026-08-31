@@ -6,7 +6,7 @@
     <title>MongoDB · Crea tu cómic con IA</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -727,13 +727,15 @@
     <script>
         // Estilos de dibujo. El id debe coincidir con las claves de ESTILOS en server.js
         const ESTILOS_COMIC = [
-            { id: 'americano', name: 'Superhéroe', emoji: '🦸', color: 'linear-gradient(135deg, #e63946, #1d3557)' },
-            { id: 'manga',     name: 'Manga',      emoji: '⛩️', color: 'linear-gradient(135deg, #f8f9fa, #495057)' },
-            { id: 'caricatura',name: 'Caricatura', emoji: '🎨', color: 'linear-gradient(135deg, #ffbe0b, #fb5607)' },
+            // img: miniatura de muestra del estilo. Los que aún no tienen imagen
+            // caen al emoji sobre un degradado.
+            { id: 'americano', name: 'Superhéroe', img: 'img/estilos/americano.png' },
+            { id: 'manga',     name: 'Manga',      img: 'img/estilos/manga.png' },
+            { id: 'caricatura',name: 'Caricatura', img: 'img/estilos/caricatura.png' },
+            { id: 'noir',      name: 'Noir',       img: 'img/estilos/noir.png' },
+            { id: 'chibi',     name: 'Chibi',      img: 'img/estilos/chibi.png' },
             { id: 'acuarela',  name: 'Acuarela',   emoji: '🖌️', color: 'linear-gradient(135deg, #a8dadc, #cdb4db)' },
-            { id: 'noir',      name: 'Noir',       emoji: '🕵️', color: 'linear-gradient(135deg, #212529, #6c757d)' },
             { id: 'retro',     name: 'Retro 60s',  emoji: '📻', color: 'linear-gradient(135deg, #ffd166, #ef476f)' },
-            { id: 'chibi',     name: 'Chibi',      emoji: '🐰', color: 'linear-gradient(135deg, #ffc8dd, #bde0fe)' },
             { id: 'pixar',     name: '3D Animado', emoji: '🎬', color: 'linear-gradient(135deg, #4cc9f0, #4361ee)' }
         ];
 
@@ -745,8 +747,11 @@
                 const div = document.createElement('div');
                 div.className = 'style-option';
                 div.style.cssText = 'padding:14px;background:#ffffff;border:2px solid #e9ecef;border-radius:15px;cursor:pointer;transition:all 0.3s ease;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;';
-                div.innerHTML = '<div style="width:100%;height:70px;border-radius:10px;background:' + estilo.color + ';display:flex;align-items:center;justify-content:center;font-size:2rem;">' + estilo.emoji + '</div>' +
-                                '<span style="font-size:0.9rem;font-weight:600;color:#333;">' + estilo.name + '</span>';
+                const muestra = estilo.img
+                    ? '<img src="' + estilo.img + '" alt="' + estilo.name + '" loading="lazy" class="style-thumb">'
+                    : '<div class="style-thumb" style="background:' + estilo.color + ';display:flex;align-items:center;justify-content:center;font-size:2rem;">' + estilo.emoji + '</div>';
+
+                div.innerHTML = muestra + '<span style="font-size:0.9rem;font-weight:700;color:#001E2B;">' + estilo.name + '</span>';
 
                 div.addEventListener('click', () => {
                     document.querySelectorAll('.style-option').forEach(opt => {
@@ -902,7 +907,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=15"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
