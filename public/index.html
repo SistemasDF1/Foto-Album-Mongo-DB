@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.ico?v=2" sizes="any">
     <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=21">
+    <link rel="stylesheet" href="style.css?v=22">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -723,9 +723,9 @@
             { id: 'caricatura',name: 'Caricatura', img: 'img/estilos/caricatura.png' },
             { id: 'noir',      name: 'Noir',       img: 'img/estilos/noir.png' },
             { id: 'chibi',     name: 'Chibi',      img: 'img/estilos/chibi.png' },
-            { id: 'acuarela',  name: 'Acuarela',   emoji: '🖌️', color: 'linear-gradient(135deg, #a8dadc, #cdb4db)' },
-            { id: 'retro',     name: 'Retro 60s',  emoji: '📻', color: 'linear-gradient(135deg, #ffd166, #ef476f)' },
-            { id: 'pixar',     name: '3D Animado', emoji: '🎬', color: 'linear-gradient(135deg, #4cc9f0, #4361ee)' }
+            { id: 'acuarela',  name: 'Acuarela',   img: 'img/estilos/acuarela.png' },
+            { id: 'pixar',     name: '3D Animado', img: 'img/estilos/pixar.png' },
+            { id: 'retro',     name: 'Retro 60s',  emoji: '📻', color: 'linear-gradient(135deg, #ffd166, #ef476f)' }
         ];
 
         function cargarEstilos() {
@@ -794,6 +794,9 @@
     <div class="container" id="generatorContainer" style="display:none; min-height:100vh; display:none; align-items:center; justify-content:center; padding:12px;">
         <main class="main-content" style="position: relative; margin: 32px auto; text-align: center; background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 18px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); width: 90%; max-width: 500px; box-sizing: border-box; max-height: 92vh; overflow-y: auto;">
             <div class="upload-section" id="fotoSection">
+                <h2 id="tituloFoto" style="font-size: 2.4rem; margin-bottom: 6px; font-weight: 800; line-height:1.15;">Tómate una foto</h2>
+                <p style="color:#ffffff; opacity:0.85; font-size:1.05rem; margin-bottom:14px;">Serás el protagonista de tu cómic</p>
+
                 <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
                     
                     <div class="upload-area" id="uploadArea">
@@ -893,7 +896,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=21"></script>
+    <script src="app.js?v=22"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador

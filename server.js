@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v14';
+const MOTOR = 'vinetas-v15';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -667,7 +667,7 @@ app.get('/c/:id', (req, res) => {
         <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
         <title>Cómic no encontrado</title></head>
         <body style="margin:0;min-height:100vh;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;background:#001E2B;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;">
-          <img src="/img/mongodb/MongoDB_White.svg" alt="MongoDB" style="height:26px;">
+          <img src="/img/mongodb/MongoDB_White.svg" alt="MongoDB" style="height:42px;">
           <div><h1 style="color:#00ED64;font-size:1.3rem;">Cómic no encontrado</h1>
           <p style="opacity:.8">Puede que este enlace haya caducado.</p></div>
         </body></html>`);
@@ -739,7 +739,7 @@ app.get('/c/:id', (req, res) => {
         radial-gradient(ellipse 90% 70% at 50% 52%, transparent 42%, rgba(0,10,16,0.72) 100%);
     }
 
-    .logo { height: 26px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.45)); }
+    .logo { height: 46px; width: auto; filter: drop-shadow(0 2px 8px rgba(0,0,0,.5)); }
 
     h1 {
       font-family: 'Euclid Circular A', system-ui, -apple-system, sans-serif;
