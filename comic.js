@@ -361,10 +361,17 @@ async function capaTexto(escena, arte) {
     const medida = medirGlobo(dialogo);
     const minX = medida.rx + margen;
     const maxX = VINETA_W - medida.rx - margen;
-    // El globo arranca debajo del cartucho de narracion para no encimarse con el
-    const techo = margen + (cartuchoAlto ? cartuchoAlto + 16 : 0);
+    // El globo arranca bien por debajo del cartucho: con poca separación las dos
+    // cajas se leen como un bloque amontonado.
+    const SEPARACION = 46;
+    const techo = margen + (cartuchoAlto ? cartuchoAlto + SEPARACION : 0);
     const filaAlta = techo + medida.ry;
-    const filas = [filaAlta, filaAlta + medida.ry * 0.9];
+
+    // Si el cartucho ya ocupa la parte alta, se le ofrecen al globo posiciones
+    // más abajo en vez de apretarlo contra él.
+    const filas = cartuchoAlto
+      ? [filaAlta, filaAlta + medida.ry * 1.1, VINETA_H * 0.45]
+      : [filaAlta, filaAlta + medida.ry * 0.9];
     const columnas = [minX, VINETA_W / 2, maxX].filter(x => x >= minX - 1 && x <= maxX + 1);
 
     const candidatos = [];

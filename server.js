@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v4';
+const MOTOR = 'vinetas-v5';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -87,6 +87,10 @@ const HISTORIA_MAX = 1200;
 // Cuántas viñetas pueden llevar onomatopeya. Si salen en todas, la página se
 // satura y el recurso pierde fuerza.
 const MAX_ONOMATOPEYAS = Math.max(1, Math.floor(NUM_VINETAS / 2));
+
+// Lo mismo con la narración: en exceso compite con los globos y llena la página
+// de texto que repite lo que ya se ve.
+const MAX_NARRACIONES = Math.max(1, Math.floor(NUM_VINETAS / 2));
 
 // Estilos de dibujo disponibles. El id es lo que se manda al modelo.
 const ESTILOS = {
@@ -173,16 +177,22 @@ NO describas la cara ni el peinado aquí: eso va en "apariencia".
   (plano general, plano medio o primer plano), qué hace el protagonista y dónde está.
   Es una instrucción de dibujo: nada de diálogo ni de texto aquí.
 - "dialogo": lo que dice el protagonista, MÁXIMO 7 palabras. Cadena vacía si no habla.
-- "narracion": texto de narrador, MÁXIMO 8 palabras. Cadena vacía si no hace falta.
-  Úsalo en la primera viñeta y en los saltos de tiempo o de lugar.
+- "narracion": texto de narrador, MÁXIMO 8 palabras. Cadena vacía casi siempre.
+  Úsala SOLO en la primera viñeta (para situar la historia) y en un salto de
+  tiempo o de lugar. NUNCA describas lo que ya se ve en el dibujo: si la viñeta
+  muestra a alguien volando, no escribas "vuela por el cielo".
+  Una viñeta no debe llevar narración Y diálogo a la vez, salvo la primera.
 - "onomatopeya": un solo sonido corto en mayúsculas (¡CRASH!, ¡BOOM!, ¡PUM!).
   Úsala SOLO en las viñetas con acción o sonido fuerte de verdad.
   Como MÁXIMO en ${MAX_ONOMATOPEYAS} de las ${NUM_VINETAS} viñetas; en el resto, cadena vacía.
 
 Reglas:
 - Todo el texto en español correcto, con acentos.
-- Que no todas las viñetas lleven diálogo, narración y onomatopeya a la vez: alterna.
+- MENOS TEXTO ES MEJOR: el dibujo cuenta la historia, el texto solo lo que no se ve.
+- Cada viñeta lleva UNA sola caja de texto (o diálogo o narración), nunca las dos,
+  salvo la primera viñeta.
 - Una viñeta tranquila no necesita onomatopeya: déjala vacía.
+- Si una viñeta se entiende sola, deja diálogo y narración vacíos.
 - Varía los encuadres entre viñetas.
 - La última viñeta debe cerrar la historia.`;
 
@@ -206,13 +216,34 @@ Reglas:
     escenas.push({ accion: historia, dialogo: '', narracion: '', onomatopeya: '' });
   }
 
-  // El modelo tiende a poner onomatopeya en todas las viñetas aunque se le pida
-  // lo contrario, así que el límite se aplica aquí. Se conservan las de las
-  // viñetas más "sonoras": primero las que no llevan narración.
+  // El modelo tiende a llenar todas las viñetas de texto aunque se le pida lo
+  // contrario, así que los límites se aplican aquí.
+
+  // 1. Nada de narración y diálogo en la misma viñeta (salvo la primera): dos
+  //    cajas de texto en una viñeta se ven amontonadas y suelen decir lo mismo.
+  escenas.forEach((escena, i) => {
+    const tieneDialogo = !!(escena.dialogo || '').trim();
+    const tieneNarracion = !!(escena.narracion || '').trim();
+    if (i > 0 && tieneDialogo && tieneNarracion) {
+      escena.narracion = '';
+    }
+  });
+
+  // 2. La narración se reserva para situar la historia: primera viñeta y, como
+  //    mucho, alguna más.
+  const conNarracion = escenas
+    .map((e, i) => i)
+    .filter(i => (escenas[i].narracion || '').trim());
+
+  conNarracion.slice(MAX_NARRACIONES).forEach(i => {
+    escenas[i].narracion = '';
+  });
+
+  // 3. Onomatopeyas solo en las viñetas con acción, y no en todas.
   const conSonido = escenas
-    .map((e, i) => ({ i, tieneNarracion: !!(e.narracion || '').trim() }))
+    .map((e, i) => ({ i, tieneTexto: !!((e.narracion || '') + (e.dialogo || '')).trim() }))
     .filter(({ i }) => (escenas[i].onomatopeya || '').trim())
-    .sort((a, b) => Number(a.tieneNarracion) - Number(b.tieneNarracion));
+    .sort((a, b) => Number(a.tieneTexto) - Number(b.tieneTexto));
 
   conSonido.slice(MAX_ONOMATOPEYAS).forEach(({ i }) => {
     escenas[i].onomatopeya = '';
