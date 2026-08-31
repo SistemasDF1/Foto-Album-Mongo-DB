@@ -172,6 +172,12 @@ async function generateImage() {
 
         resultImage.src = data.image;
         resultSection.style.display = 'block';
+
+        // El resultado necesita más ancho que el wizard para que el cómic y el
+        // QR quepan lado a lado
+        const panel = document.querySelector('#generatorContainer .main-content');
+        if (panel) panel.style.maxWidth = '1000px';
+
         resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         showToast('¡Tu cómic está listo! 🎉', 'success');
 
@@ -249,6 +255,11 @@ function downloadImage() {
     showToast('Cómic descargado', 'success');
 }
 
+function restaurarAnchoPanel() {
+    const panel = document.querySelector('#generatorContainer .main-content');
+    if (panel) panel.style.maxWidth = '500px';
+}
+
 function showToast(message, type = 'success') {
     toast.textContent = message;
     toast.className = `toast ${type}`;
@@ -322,22 +333,27 @@ function showQRCode(qrCodeDataUrl) {
 
     qrContainer.innerHTML = '';
 
-    const title = document.createElement('h3');
+    // Tarjeta blanca: el QR necesita fondo claro para que la cámara lo lea bien
+    const tarjeta = document.createElement('div');
+    tarjeta.style.cssText = 'background:#ffffff; padding:16px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:flex; flex-direction:column; align-items:center; gap:10px;';
+
+    const title = document.createElement('div');
     title.textContent = 'Escanea para descargar';
-    title.style.color = '#ffffff';
-    title.style.fontSize = '1.1rem';
-    title.style.marginBottom = '10px';
-    title.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
-    qrContainer.appendChild(title);
+    title.style.cssText = 'color:#001E2B; font-size:1rem; font-weight:700; text-align:center;';
+    tarjeta.appendChild(title);
 
     const qrImg = document.createElement('img');
     qrImg.src = qrCodeDataUrl;
     qrImg.alt = 'Código QR de descarga';
-    qrImg.style.width = '150px';
-    qrImg.style.height = '150px';
-    qrImg.style.border = '2px solid #ddd';
-    qrImg.style.borderRadius = '10px';
-    qrContainer.appendChild(qrImg);
+    qrImg.style.cssText = 'width:210px; height:210px; display:block;';
+    tarjeta.appendChild(qrImg);
+
+    const pie = document.createElement('div');
+    pie.textContent = 'Apunta la cámara de tu celular';
+    pie.style.cssText = 'color:#5C6C75; font-size:0.8rem; text-align:center;';
+    tarjeta.appendChild(pie);
+
+    qrContainer.appendChild(tarjeta);
 }
 
 // Ejecutar al cargar la página

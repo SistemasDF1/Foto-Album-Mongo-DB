@@ -380,21 +380,57 @@ body::after {
     animation: fadeInUp 0.8s ease;
 }
 
+/* El cómic y el QR se muestran lado a lado: si el QR queda debajo de una
+   página de 2400x3600, hay que hacer scroll para verlo y en el evento se pierde. */
+.result-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.result-card > h2 {
+    flex: 1 0 100%;
+    text-align: center;
+}
+
 .result-image-container {
-    margin: 1.5rem 0;
+    flex: 1 1 320px;
+    margin: 0;
     text-align: center;
 }
 
 .result-image-container img {
     max-width: 100%;
+    max-height: 68vh;      /* sin esto la página empuja el QR fuera de la pantalla */
+    width: auto;
     border-radius: 0.75rem;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Columna derecha: QR y botones */
+#qr-container {
+    flex: 0 0 auto;
+    margin: 0 !important;
+}
+
 .result-actions {
+    flex: 0 0 auto;
     display: flex;
+    flex-direction: column;
     gap: 1rem;
-    margin-top: 1.5rem;
+    margin-top: 0 !important;
+}
+
+@media (max-width: 700px) {
+    .result-card {
+        flex-direction: column;
+        align-items: center;
+    }
+    .result-image-container img {
+        max-height: 46vh;
+    }
 }
 
 .action-btn {
