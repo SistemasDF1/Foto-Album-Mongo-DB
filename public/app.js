@@ -14,8 +14,6 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const downloadBtn = document.getElementById('downloadBtn');
 const newBtn = document.getElementById('newBtn');
 const toast = document.getElementById('toast');
-const fileInput = document.getElementById('fileInput');
-const uploadBtn = document.getElementById('uploadBtn');
 const countdownEl = document.getElementById('countdown');
 const storyCard = document.getElementById('storyCard');
 const storyInput = document.getElementById('storyInput');
@@ -51,8 +49,6 @@ let temporizadorCarga = null;
 generateBtn.addEventListener('click', generateImage);
 downloadBtn.addEventListener('click', downloadImage);
 newBtn.addEventListener('click', () => reiniciarProceso());
-uploadBtn.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', handleFileUpload);
 cameraBtn.addEventListener('click', openCamera);
 captureBtn.addEventListener('click', startCountdown);
 closeCameraBtn.addEventListener('click', closeCamera);
@@ -105,19 +101,6 @@ function mostrarPasoHistoria() {
     storyCard.style.display = 'block';
     checkFormValid();
     storyInput.focus();
-}
-
-// Manejar subida de archivo desde galería
-function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        imagePreview.src = ev.target.result;
-        mostrarPasoHistoria();
-    };
-    reader.readAsDataURL(file);
 }
 
 // Iniciar cuenta regresiva

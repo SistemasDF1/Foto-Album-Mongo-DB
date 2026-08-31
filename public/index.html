@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MongoDB · Crea tu cómic con IA</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -859,12 +859,6 @@
                             Usar cámara
                         </button>
                         
-                        <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                        <button class="camera-btn" id="uploadBtn" type="button" style="background: linear-gradient(135deg, #001E2B 0%, #023430 100%); margin-top: 10px;">
-                            <span style="font-size: 1.2rem;">📁</span>
-                            Subir foto
-                        </button>
-
                         <div class="preview-container" id="previewContainer" style="display: none;">
                             <img id="imagePreview" alt="Preview">
                             <button class="remove-btn" id="removeBtn" title="Quitar imagen">
@@ -938,7 +932,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
@@ -950,7 +944,6 @@
             // Limpiar campos
             document.getElementById('imagePreview').src = '';
             document.getElementById('previewContainer').style.display = 'none';
-            document.getElementById('fileInput').value = '';
             document.getElementById('storyInput').value = '';
             document.getElementById('storyCounter').textContent = '0 / 1200';
             document.getElementById('generateBtn').disabled = true;
