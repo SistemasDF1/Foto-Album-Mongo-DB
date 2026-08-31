@@ -73,12 +73,14 @@
 
 :root {
     /* Paleta oficial MongoDB */
-    --mdb-spring-green: #00EB64;
+    --mdb-spring-green: #00ED64;
     --mdb-forest-green: #00684A;
     --mdb-evergreen: #023430;
     --mdb-slate-blue: #001E2B;
     --mdb-mist: #E3FCF7;
     --mdb-lavanda: #F9EBFF;
+    --mdb-perla-negra: #061621;
+    --mdb-alabastro: #FAFAFA;
     --mdb-white: #FFFFFF;
 
     --primary: var(--mdb-forest-green);
@@ -95,7 +97,7 @@
     --shadow: rgba(0, 30, 43, 0.15);
 
     /* Superficies reutilizadas por las tarjetas del wizard */
-    --mdb-card-bg: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.20));
+    --mdb-card-bg: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.20));
     --mdb-btn: var(--mdb-spring-green);
 }
 
@@ -139,9 +141,9 @@ body::after {
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(ellipse 70% 46% at 50% -4%, rgba(0, 235, 100, 0.20), transparent 62%),
-        radial-gradient(ellipse 52% 60% at 2% 34%, rgba(0, 235, 100, 0.13), transparent 66%),
-        radial-gradient(ellipse 52% 60% at 98% 34%, rgba(0, 235, 100, 0.11), transparent 66%),
+        radial-gradient(ellipse 70% 46% at 50% -4%, rgba(0, 237, 100, 0.20), transparent 62%),
+        radial-gradient(ellipse 52% 60% at 2% 34%, rgba(0, 237, 100, 0.13), transparent 66%),
+        radial-gradient(ellipse 52% 60% at 98% 34%, rgba(0, 237, 100, 0.11), transparent 66%),
         radial-gradient(ellipse 90% 70% at 50% 52%, transparent 42%, rgba(0, 10, 16, 0.72) 100%);
 }
 
@@ -299,7 +301,7 @@ body::after {
 #storyInput:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(0, 235, 100, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 237, 100, 0.25);
 }
 
 .prompt-examples {
@@ -525,7 +527,7 @@ body::after {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 235, 100, 0.35), transparent 70%);
+    background: radial-gradient(circle, rgba(0, 237, 100, 0.35), transparent 70%);
     animation: pulsoHalo 1.6s ease-in-out infinite;
 }
 
@@ -538,7 +540,7 @@ body::after {
     background-position: center;
     background-size: contain;
     animation: latidoHoja 1.6s ease-in-out infinite;
-    filter: drop-shadow(0 4px 14px rgba(0, 235, 100, 0.45));
+    filter: drop-shadow(0 4px 14px rgba(0, 237, 100, 0.45));
 }
 
 @keyframes pulsoHalo {
@@ -656,16 +658,7 @@ body::after {
     cursor: pointer;
 }
 
-#captureBtn {
-    background: #ffd600;
-    color: #222;
-    font-weight: bold;
-}
-
-#closeCameraBtn {
-    background: #eee;
-    color: #222;
-}
+/* Los colores de estos botones están en el bloque de paleta, más abajo */
 
 /* Footer */
 .footer {
@@ -866,7 +859,7 @@ button, input, textarea, select {
     color: var(--mdb-slate-blue) !important;
     border: none !important;
     font-weight: 700;
-    box-shadow: 0 6px 18px rgba(0, 235, 100, 0.28) !important;
+    box-shadow: 0 6px 18px rgba(0, 237, 100, 0.28) !important;
 }
 
 .btn-mdb:hover:not(:disabled),
@@ -911,7 +904,7 @@ button:disabled {
     border-radius: 12px;
     cursor: pointer;
     background: rgba(0, 30, 43, 0.55);
-    border: 1px solid rgba(0, 235, 100, 0.45);
+    border: 1px solid rgba(0, 237, 100, 0.45);
     color: var(--mdb-spring-green);
     backdrop-filter: blur(8px);
     transition: all 0.25s ease;
@@ -1071,7 +1064,7 @@ body {
 #storyCard h3,
 .result-card h2,
 .titulo-degradado {
-    background-image: linear-gradient(100deg, #00EB64 0%, #00D2C8 45%, #B8E986 75%, #E3F79A 100%);
+    background-image: linear-gradient(100deg, #00ED64 0%, #00D2C8 45%, #B8E986 75%, #E3F79A 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1117,4 +1110,49 @@ body {
     #sexo-section h2,
     #style-section h2,
     .result-card h2 { font-size: 1.9rem !important; }
+}
+
+
+/* ===== Modal de cámara con la paleta de marca =====
+   Estos botones se habían quedado en el naranja del proyecto anterior. */
+#captureBtn {
+    background: var(--mdb-spring-green) !important;
+    color: var(--mdb-slate-blue) !important;
+    border: none !important;
+    padding: 14px 30px !important;
+    border-radius: 28px !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 237, 100, 0.3) !important;
+    transition: all 0.25s ease;
+}
+
+#captureBtn:hover {
+    background: var(--mdb-forest-green) !important;
+    color: var(--mdb-white) !important;
+    transform: translateY(-2px);
+}
+
+#closeCameraBtn {
+    background: transparent !important;
+    color: var(--mdb-alabastro) !important;
+    border: 2px solid rgba(250, 250, 250, 0.45) !important;
+    padding: 12px 28px !important;
+    border-radius: 28px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+#closeCameraBtn:hover {
+    background: var(--mdb-alabastro) !important;
+    color: var(--mdb-evergreen) !important;
+    border-color: var(--mdb-alabastro) !important;
+}
+
+/* El modal usa el negro de marca en vez de un gris cualquiera */
+.camera-modal {
+    background: rgba(6, 22, 33, 0.92) !important;
 }

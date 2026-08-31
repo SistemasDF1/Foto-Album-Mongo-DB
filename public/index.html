@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MongoDB · Crea tu cómic con IA</title>
-    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.ico?v=2" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=20">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -14,7 +15,7 @@
         }
         /* Estilos para botón de cámara */
         .camera-btn {
-            background: #00EB64;
+            background: #00ED64;
             color: white;
             border: none;
             padding: 16px 32px;
@@ -36,8 +37,8 @@
         
         .camera-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-            background: #194875;
+            box-shadow: 0 12px 35px rgba(0, 237, 100, 0.35);
+            background: #00684A;
         }
         
         .camera-btn:active {
@@ -79,7 +80,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 237, 100, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -94,19 +95,19 @@
         
         .generate-btn:hover:not(:disabled) {
             transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(40, 167, 69, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 237, 100, 0.4);
             background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
         }
         
         .generate-btn:active:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 237, 100, 0.3);
         }
         
         .generate-btn:disabled {
-            background: #194875;
+            background: #023430;
             cursor: not-allowed;
-            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.2);
+            box-shadow: none;
             transform: none;
         }
         
@@ -144,7 +145,7 @@
         }
         
         .camera-content {
-            background: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.22));
+            background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22));
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 20px;
@@ -168,21 +169,9 @@
             background: #000;
         }
         
+        /* El aspecto de estos botones vive en style.css, con la paleta de marca */
         #captureBtn, #closeCameraBtn {
-            background: #e55319;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 1rem;
-            cursor: pointer;
             margin: 10px 15px;
-            transition: all 0.3s ease;
-        }
-        
-        #captureBtn:hover, #closeCameraBtn:hover {
-            background: #194875;
-            transform: translateY(-2px);
         }
         
         /* El cargador vive en style.css: usa el logomark de MongoDB */
@@ -699,7 +688,7 @@
 
     <div class="container" id="inicioContainer" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;justify-content:center;padding:16px; transition: opacity 0.3s;">
         <!-- Paso 1: Hombre o mujer -->
-        <div id="sexo-section" style="display: none; position: relative; text-align: center; background: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 40px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); min-width: 320px; margin-bottom: 30px;">
+        <div id="sexo-section" style="display: none; position: relative; text-align: center; background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 40px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); min-width: 320px; margin-bottom: 30px;">
             <h2 style="font-size: 2.4rem; margin-bottom: 8px; font-weight: 800; line-height:1.15;">¿Cómo te dibujamos?</h2>
             <p style="color:#ffffff; opacity:0.85; font-size:1.05rem; margin-bottom:22px;">Elige para que tu personaje salga como tú</p>
             <div id="sexo-grid" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
@@ -712,16 +701,16 @@
                     <span style="font-size:1.05rem; font-weight:700; color:#001E2B;">Hombre</span>
                 </div>
             </div>
-            <button id="btn-sexo-next" style="background: #00EB64; color: #001E2B; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 26px; box-shadow: 0 4px 15px rgba(0, 235, 100, 0.35);" disabled>Continuar</button>
+            <button id="btn-sexo-next" style="background: #00ED64; color: #001E2B; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 26px; box-shadow: 0 4px 15px rgba(0, 237, 100, 0.35);" disabled>Continuar</button>
         </div>
         <!-- Paso 3: Estilo de dibujo -->
-        <div id="style-section" style="display:none;flex-direction:column;align-items:center;position:relative;text-align:center;background: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);padding:32px 36px;border-radius:20px;box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45);width:min(92vw, 940px);max-height:94vh;">
+        <div id="style-section" style="display:none;flex-direction:column;align-items:center;position:relative;text-align:center;background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);padding:32px 36px;border-radius:20px;box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45);width:min(92vw, 940px);max-height:94vh;">
             <h2 style="font-size: 2.4rem; margin-bottom: 8px; font-weight: 800; line-height:1.15;">Elige el estilo de dibujo</h2>
             <p style="color:#ffffff; opacity:0.85; font-size:1.05rem; margin-bottom:20px;">Así se verá tu cómic</p>
             <div class="styles-grid" id="styles-grid" style="display:grid;margin-bottom:18px;">
                 <!-- Se llena con JS -->
             </div>
-            <button id="btn-style-next" style="background: #00EB64; color: #001E2B; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; box-shadow: 0 4px 15px rgba(0, 235, 100, 0.35);" disabled>Continuar</button>
+            <button id="btn-style-next" style="background: #00ED64; color: #001E2B; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; box-shadow: 0 4px 15px rgba(0, 237, 100, 0.35);" disabled>Continuar</button>
         </div>
     </div>
     <script>
@@ -780,7 +769,7 @@
                         o.style.borderColor = '#e9ecef';
                         o.style.transform = 'none';
                     });
-                    opcion.style.borderColor = '#00EB64';
+                    opcion.style.borderColor = '#00ED64';
                     opcion.style.transform = 'scale(1.05)';
                     window.sexoSeleccionado = opcion.getAttribute('data-sexo');
                     document.getElementById('btn-sexo-next').disabled = false;
@@ -811,7 +800,7 @@
         }
     </script>
     <div class="container" id="generatorContainer" style="display:none; min-height:100vh; display:none; align-items:center; justify-content:center; padding:12px;">
-        <main class="main-content" style="position: relative; margin: 32px auto; text-align: center; background: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 18px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); width: 90%; max-width: 500px; box-sizing: border-box; max-height: 92vh; overflow-y: auto;">
+        <main class="main-content" style="position: relative; margin: 32px auto; text-align: center; background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 18px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); width: 90%; max-width: 500px; box-sizing: border-box; max-height: 92vh; overflow-y: auto;">
             <div class="upload-section">
                 <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
                     
@@ -907,7 +896,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=18"></script>
+    <script src="app.js?v=20"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
