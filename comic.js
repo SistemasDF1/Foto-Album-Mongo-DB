@@ -34,8 +34,45 @@ const BORDE = 8;
 const FUENTE_TEXTO = "'Comic Sans MS', 'Euclid Circular A', 'DejaVu Sans', 'Liberation Sans', sans-serif";
 const FUENTE_IMPACTO = "'Arial Black', 'Euclid Circular A', 'DejaVu Sans Bold', 'Liberation Sans Narrow', sans-serif";
 
-// Comic Sans es ancha: sin este factor el texto se sale de los globos.
-const ANCHO_CHAR = 0.62;
+// Ancho medio de carácter, en fracción del tamaño de fuente.
+// No se puede fijar como constante: depende de la fuente que el sistema acabe
+// usando (Comic Sans en Windows, DejaVu en Linux) y si se queda corta, el texto
+// se sale de los globos. Se mide una vez, de verdad, sobre la fuente activa.
+let anchoChar = null;
+
+// Margen para que el texto nunca toque el borde de la caja.
+const HOLGURA = 1.06;
+
+async function medirAnchoChar() {
+  if (anchoChar !== null) return anchoChar;
+
+  const fontSize = 100;
+  const muestra = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ ÁÉÍÓÚ,.¡!¿?';
+
+  try {
+    const svg = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="6000" height="${fontSize * 2}">
+        <rect width="100%" height="100%" fill="white"/>
+        <text x="20" y="${fontSize * 1.3}" font-family="${FUENTE_TEXTO}" font-size="${fontSize}" font-weight="bold" fill="black">${muestra.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>
+      </svg>`
+    );
+
+    const { info } = await sharp(svg).trim({ threshold: 20 }).toBuffer({ resolveWithObject: true });
+    const medido = info.width / muestra.length / fontSize;
+
+    // Si la medición sale disparatada, no fiarse de ella
+    anchoChar = medido > 0.3 && medido < 1.2 ? medido * HOLGURA : 0.72;
+  } catch {
+    anchoChar = 0.72;
+  }
+
+  return anchoChar;
+}
+
+// Valor por defecto hasta que se mida (se mide antes de rotular nada).
+function factorAncho() {
+  return anchoChar ?? 0.72;
+}
 
 // El modelo a veces dibuja un marco propio pese a pedirle que no: se recorta
 // un poco de cada borde antes de encajar la viñeta.
@@ -80,18 +117,35 @@ function partirLineas(texto, maxChars) {
 // ---------------------------------------------------------------------------
 
 // Calcula el tamaño que ocupará un globo, para poder ubicarlo antes de dibujarlo.
+// Si con el tamaño pedido no cabría en la viñeta, reduce la fuente hasta que quepa.
 function medirGlobo(texto, { maxChars = 20, fontSize = 46 } = {}) {
+  const anchoMaximo = VINETA_W - 80;
+  let tam = fontSize;
+
+  for (let intento = 0; intento < 8; intento++) {
+    const porLinea = Math.max(6, Math.floor(anchoMaximo / (tam * factorAncho())));
+    const lineas = partirLineas(texto.toUpperCase(), Math.min(maxChars, porLinea));
+    const lineH = tam * 1.25;
+    const anchoTexto = Math.max(...lineas.map(l => l.length)) * tam * factorAncho();
+    const rx = anchoTexto / 2 + 46;
+    const ry = (lineas.length * lineH) / 2 + 40;
+
+    if (rx * 2 <= anchoMaximo || tam <= 26) {
+      return { lineas, lineH, rx, ry, ancho: rx * 2, alto: ry * 2, fontSize: tam };
+    }
+    tam -= 4;
+  }
+
+  // Inalcanzable en la práctica, pero deja el contrato explícito
   const lineas = partirLineas(texto.toUpperCase(), maxChars);
-  const lineH = fontSize * 1.25;
-  const anchoTexto = Math.max(...lineas.map(l => l.length)) * fontSize * ANCHO_CHAR;
-  const rx = anchoTexto / 2 + 46;
-  const ry = (lineas.length * lineH) / 2 + 40;
-  return { lineas, lineH, rx, ry, ancho: rx * 2, alto: ry * 2 };
+  return { lineas, lineH: tam * 1.25, rx: anchoMaximo / 2, ry: 60, ancho: anchoMaximo, alto: 120, fontSize: tam };
 }
 
 // Globo de diálogo ovalado con cola apuntando hacia abajo.
 function globoDialogo(texto, { cx, cy, maxChars = 20, fontSize = 46 }) {
-  const { lineas, lineH, rx, ry } = medirGlobo(texto, { maxChars, fontSize });
+  const medida = medirGlobo(texto, { maxChars, fontSize });
+  const { lineas, lineH, rx, ry } = medida;
+  fontSize = medida.fontSize;
 
   // La cola sale del borde inferior del óvalo
   const colaBase = 34;
@@ -112,13 +166,20 @@ function globoDialogo(texto, { cx, cy, maxChars = 20, fontSize = 46 }) {
 
 // Cartucho rectangular de narración, esquina superior izquierda.
 function cartuchoNarracion(texto, { x, y, maxAncho }) {
-  const fontSize = 40;
-  const anchoChar = fontSize * ANCHO_CHAR;
-  const maxChars = Math.max(8, Math.floor((maxAncho - 40) / anchoChar));
-  const lineas = partirLineas(texto.toUpperCase(), maxChars);
-  const lineH = fontSize * 1.24;
+  // Con textos largos se baja el tamaño antes que dejar que se salgan de la caja
+  let fontSize = 40;
+  let lineas, anchoDeChar;
 
-  const w = Math.max(...lineas.map(l => l.length)) * anchoChar + 40;
+  for (let intento = 0; intento < 6; intento++) {
+    anchoDeChar = fontSize * factorAncho();
+    const maxChars = Math.max(8, Math.floor((maxAncho - 40) / anchoDeChar));
+    lineas = partirLineas(texto.toUpperCase(), maxChars);
+    if (lineas.length <= 3 || fontSize <= 26) break;
+    fontSize -= 3;
+  }
+
+  const lineH = fontSize * 1.24;
+  const w = Math.min(maxAncho, Math.max(...lineas.map(l => l.length)) * anchoDeChar + 40);
   const h = lineas.length * lineH + 30;
 
   const textos = lineas
@@ -242,6 +303,9 @@ async function capaTexto(escena, arte) {
 
 // Recibe los buffers PNG de cada viñeta y devuelve la página terminada en base64.
 export async function componerPagina(vinetas, escenas) {
+  // Medir la fuente real antes de calcular cajas de texto
+  await medirAnchoChar();
+
   const capas = [];
 
   for (let i = 0; i < vinetas.length; i++) {
@@ -307,6 +371,8 @@ export const MEDIDAS_VINETA = { ancho: VINETA_W, alto: VINETA_H };
 // Dibuja una linea de prueba y mide cuanta tinta deja. Si el resultado sale en
 // blanco, librsvg no encontro ninguna fuente y los globos saldrian sin texto.
 export async function comprobarFuentes() {
+  await medirAnchoChar();
+
   const svg = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="120">
       <rect width="100%" height="100%" fill="white"/>
