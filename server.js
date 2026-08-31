@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v5';
+const MOTOR = 'vinetas-v6';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -677,6 +677,23 @@ app.get('/c/:id', (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tu cómic</title>
   <style>
+    /* Tipografía de marca, servida desde public/fonts */
+    @font-face {
+      font-family: 'Euclid Circular A';
+      src: url('/fonts/EuclidCircularA-Regular.ttf') format('truetype');
+      font-weight: 400; font-display: swap;
+    }
+    @font-face {
+      font-family: 'Euclid Circular A';
+      src: url('/fonts/EuclidCircularA-Medium.ttf') format('truetype');
+      font-weight: 500 900; font-display: swap;
+    }
+    @font-face {
+      font-family: 'MongoDB Value Serif';
+      src: url('/fonts/MongoDBValueSerif-Regular.ttf') format('truetype');
+      font-weight: 400; font-display: swap;
+    }
+
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
 
@@ -684,7 +701,7 @@ app.get('/c/:id', (req, res) => {
       margin: 0;
       min-height: 100vh;
       color: #fff;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Euclid Circular A', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -718,7 +735,8 @@ app.get('/c/:id', (req, res) => {
     .logo { height: 26px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.45)); }
 
     h1 {
-      font-size: 1.25rem; margin: 0; text-align: center; font-weight: 700;
+      font-family: 'MongoDB Value Serif', Georgia, serif;
+      font-size: 1.35rem; margin: 0; text-align: center; font-weight: 400;
       text-shadow: 0 2px 6px rgba(0,0,0,.6);
     }
 

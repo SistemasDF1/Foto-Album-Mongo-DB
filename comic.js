@@ -43,8 +43,8 @@ const BORDE = 8;
 //   - Windows local: Comic Sans MS y Arial Black vienen con el sistema.
 //   - Linux (Render): las instala scripts/instalar-fuentes.mjs en el postinstall,
 //     y al final quedan las libres que suelen venir en cualquier distro.
-const FUENTE_TEXTO = "'Comic Sans MS', 'Euclid Circular A', 'DejaVu Sans', 'Liberation Sans', sans-serif";
-const FUENTE_IMPACTO = "'Arial Black', 'Euclid Circular A', 'DejaVu Sans Bold', 'Liberation Sans Narrow', sans-serif";
+const FUENTE_TEXTO = "'Euclid Circular A', 'Comic Sans MS', 'DejaVu Sans', 'Liberation Sans', sans-serif";
+const FUENTE_IMPACTO = "'Euclid Circular A', 'Arial Black', 'DejaVu Sans Bold', 'Liberation Sans', sans-serif";
 
 // Ancho medio de carácter, en fracción del tamaño de fuente.
 // No se puede fijar como constante: depende de la fuente que el sistema acabe
