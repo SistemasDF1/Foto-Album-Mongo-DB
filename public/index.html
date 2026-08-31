@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.ico?v=2" sizes="any">
     <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=22">
+    <link rel="stylesheet" href="style.css?v=23">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -822,9 +822,12 @@
                 <button class="generate-btn" id="btnFotoNext" style="display:none;">
                     <span class="btn-text">Continuar</span>
                 </button>
+            </div>
+            <!-- fin del paso de la foto -->
 
-                <!-- Paso siguiente: la historia, en su propia pantalla -->
-                <div class="card story-card" id="storyCard" style="display: none; margin-top: 18px; text-align: left;">
+            <!-- Paso siguiente: la historia. Va FUERA de #fotoSection, o al
+                 ocultar la foto para avanzar se ocultaría también. -->
+            <div class="card story-card" id="storyCard" style="display: none; margin-top: 18px; text-align: left;">
                     <h3 style="font-size:1.6rem; font-weight:800; margin-bottom:6px; line-height:1.2;">Ahora escribe tu historia</h3>
                     <p style="color:#ffffff; opacity:0.85; font-size:0.95rem; margin-bottom:12px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                         Cuéntanos qué te pasa en el cómic. Entre más detalles des, mejor queda.
@@ -841,10 +844,9 @@
                     </div>
                 </div>
 
-                <button class="generate-btn" id="generateBtn" disabled>
-                    <span class="btn-text">Crear mi cómic</span>
-                </button>
-            </div>
+            <button class="generate-btn" id="generateBtn" disabled>
+                <span class="btn-text">Crear mi cómic</span>
+            </button>
 
             <div class="result-section" id="resultSection" style="display: none;">
                 <div class="card result-card">
@@ -896,7 +898,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=22"></script>
+    <script src="app.js?v=23"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
