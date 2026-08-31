@@ -223,6 +223,10 @@ async function generateImage() {
             throw new Error(`${data.error || 'Error al generar el cómic'}${detalle}`);
         }
 
+        resultImage.onerror = () => {
+            console.error('No se pudo cargar la imagen del cómic:', data.image);
+            showToast('El cómic se generó pero la imagen no cargó. Usa el QR o el enlace.', 'error');
+        };
         resultImage.src = data.image;
         resultSection.style.display = 'block';
 

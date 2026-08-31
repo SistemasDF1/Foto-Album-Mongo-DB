@@ -523,11 +523,12 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
 
     const qrCode = await QRCode.toDataURL(downloadUrl);
 
-    // Se manda la URL, no la imagen: en base64 la respuesta pesaba ~25 MB y el
-    // navegador del evento tardaba en pintarla.
+    // Se mandan URLs, no la imagen en base64: así la respuesta pesa unos KB en
+    // vez de ~25 MB. Ojo: "image" tiene que apuntar al JPEG, no a la página
+    // /c/<id>, o el <img> del navegador no puede pintarlo.
     res.json({
       success: true,
-      image: downloadUrl,
+      image: `${base}/c/${id}/imagen.jpg`,
       downloadUrl,
       qrCode,
       message: 'Cómic generado exitosamente'
