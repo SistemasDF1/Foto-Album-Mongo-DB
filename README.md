@@ -17,7 +17,8 @@ Flujo de 4 pasos:
 
 El resultado es una página vertical (2400×3600) de 6 viñetas con globos de diálogo,
 cartuchos de narración y onomatopeyas, más un **código QR** para que el asistente
-descargue su cómic al celular.
+descargue su cómic al celular. Se entrega en JPEG optimizado (~2 MB) para que la
+descarga sea rápida con datos móviles.
 
 ## 🧩 Cómo se construye el cómic
 
@@ -122,7 +123,7 @@ Cada cómic generado se guarda de forma permanente en `historias/`, una carpeta 
 historias/
 ├── index.jsonl                    # Una línea por cómic, lo más reciente al final
 └── comic_1788195516052/
-    ├── comic.png                  # La página completa
+    ├── comic.jpg                  # La página completa
     ├── historia.txt               # Lo que escribió la persona, tal cual
     └── datos.json                 # Todo: fecha, sexo, estilo, guion de las 6 viñetas
 ```
@@ -197,8 +198,8 @@ Genera la página de cómic.
 ```json
 {
   "success": true,
-  "image": "data:image/png;base64,...",
-  "downloadUrl": "http://.../downloads/comic_1788190801382.png",
+  "image": "http://.../downloads/comic_1788190801382.jpg",
+  "downloadUrl": "http://.../downloads/comic_1788190801382.jpg",
   "qrCode": "data:image/png;base64,...",
   "message": "Cómic generado exitosamente"
 }
@@ -214,7 +215,7 @@ Genera la página de cómic.
 Sirve el cómic generado (es la URL que va dentro del QR).
 
 ### `GET /download/:filename`
-Igual, pero fuerza la descarga. El nombre se valida contra `comic_<timestamp>.png`.
+Igual, pero fuerza la descarga. El nombre se valida contra `comic_<timestamp>.jpg`.
 
 ## 🎨 Personalizar
 

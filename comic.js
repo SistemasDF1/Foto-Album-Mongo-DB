@@ -294,7 +294,9 @@ export async function componerPagina(vinetas, escenas) {
     }
   })
     .composite(capas)
-    .png()
+    // JPEG y no PNG: en PNG esta página pesa ~18 MB y el QR sería inservible
+    // con datos móviles. A esta calidad el texto se mantiene nítido y baja a ~2 MB.
+    .jpeg({ quality: 88, mozjpeg: true, chromaSubsampling: '4:4:4' })
     .toBuffer();
 
   return pagina.toString('base64');

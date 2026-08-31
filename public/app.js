@@ -255,7 +255,7 @@ function downloadImage() {
     const hora = String(fecha.getHours()).padStart(2, '0');
     const minuto = String(fecha.getMinutes()).padStart(2, '0');
     const segundo = String(fecha.getSeconds()).padStart(2, '0');
-    const nombreArchivo = `Comic_${dia}-${mes}-${anio}_${hora}-${minuto}-${segundo}.png`;
+    const nombreArchivo = `Comic_${dia}-${mes}-${anio}_${hora}-${minuto}-${segundo}.jpg`;
 
     const link = document.createElement('a');
     link.href = resultImage.src;

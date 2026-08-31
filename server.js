@@ -301,11 +301,11 @@ async function archivarHistoria({ id, sexo, estilo, historia, apariencia, person
     historia,
     personaje: { apariencia, vestuario: personaje },
     escenas,
-    archivo: 'comic.png',
+    archivo: 'comic.jpg',
     downloadUrl
   };
 
-  fs.writeFileSync(path.join(carpeta, 'comic.png'), Buffer.from(imagenBase64, 'base64'));
+  fs.writeFileSync(path.join(carpeta, 'comic.jpg'), Buffer.from(imagenBase64, 'base64'));
   fs.writeFileSync(path.join(carpeta, 'datos.json'), JSON.stringify(datos, null, 2), 'utf8');
   fs.writeFileSync(path.join(carpeta, 'historia.txt'), historia, 'utf8');
 
@@ -325,7 +325,7 @@ async function cleanOldFiles() {
     if (!fs.existsSync(DOWNLOAD_DIR)) return;
 
     const files = fs.readdirSync(DOWNLOAD_DIR)
-      .filter(file => file.startsWith('comic_') && file.endsWith('.png'))
+      .filter(file => file.startsWith('comic_') && file.endsWith('.jpg'))
       .map(file => ({
         name: file,
         path: path.join(DOWNLOAD_DIR, file),
@@ -427,7 +427,7 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
 
     // Copia que sirve el QR (esta carpeta sí se va rotando)
     const id = `comic_${Date.now()}`;
-    const filename = `${id}.png`;
+    const filename = `${id}.jpg`;
     fs.writeFileSync(path.join(DOWNLOAD_DIR, filename), Buffer.from(processedImageBase64, 'base64'));
 
     await cleanOldFiles();
@@ -457,9 +457,11 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
 
     const qrCode = await QRCode.toDataURL(downloadUrl);
 
+    // Se manda la URL, no la imagen: en base64 la respuesta pesaba ~25 MB y el
+    // navegador del evento tardaba en pintarla.
     res.json({
       success: true,
-      image: `data:image/png;base64,${processedImageBase64}`,
+      image: downloadUrl,
       downloadUrl,
       qrCode,
       message: 'Cómic generado exitosamente'
@@ -541,7 +543,7 @@ app.get('/api/historias', (req, res) => {
 app.get('/download/:filename', (req, res) => {
   const filename = req.params.filename;
 
-  if (!/^comic_\d+\.png$/.test(filename)) {
+  if (!/^comic_\d+\.jpg$/.test(filename)) {
     return res.status(400).json({ error: 'Nombre de archivo inválido' });
   }
 
