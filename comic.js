@@ -153,17 +153,36 @@ function medirGlobo(texto, { maxChars = 20, fontSize = 46 } = {}) {
   return { lineas, lineH: tam * 1.25, rx: anchoMaximo / 2, ry: 60, ancho: anchoMaximo, alto: 120, fontSize: tam };
 }
 
-// Globo de diálogo ovalado con cola apuntando hacia abajo.
-function globoDialogo(texto, { cx, cy, maxChars = 20, fontSize = 46 }) {
+// Globo de diálogo. La cola apunta al personaje: un globo cuya cola señala al
+// vacío rompe la lectura, porque no se sabe quién habla.
+function globoDialogo(texto, { cx, cy, maxChars = 20, fontSize = 46, hacia = null }) {
   const medida = medirGlobo(texto, { maxChars, fontSize });
   const { lineas, lineH, rx, ry } = medida;
   fontSize = medida.fontSize;
 
-  // La cola sale del borde inferior del óvalo
+  // Destino de la cola: el sujeto que habla, o abajo si no se sabe dónde está
+  const destinoX = hacia ? hacia.x : cx - rx * 0.35;
+  const destinoY = hacia ? hacia.y : cy + ry + 90;
+
+  // La cola arranca del borde del óvalo más cercano al destino
+  const angulo = Math.atan2(destinoY - cy, destinoX - cx);
+  const baseX = cx + Math.cos(angulo) * rx * 0.75;
+  const baseY = cy + Math.sin(angulo) * ry * 0.9;
+
+  // Ancho de la base, perpendicular a la dirección de la cola
   const colaBase = 34;
-  const colaAlto = 58;
-  const puntaX = cx - rx * 0.35;
-  const cola = `${cx - colaBase / 2},${cy + ry - 6} ${cx + colaBase / 2},${cy + ry - 6} ${puntaX},${cy + ry + colaAlto}`;
+  const perpX = Math.cos(angulo + Math.PI / 2) * colaBase / 2;
+  const perpY = Math.sin(angulo + Math.PI / 2) * colaBase / 2;
+
+  // La punta se queda a medio camino: una cola larguísima queda fea
+  const largo = Math.min(
+    Math.hypot(destinoX - cx, destinoY - cy) - Math.max(rx, ry) * 0.6,
+    ry * 2.2
+  );
+  const puntaX = baseX + Math.cos(angulo) * Math.max(largo, 40);
+  const puntaY = baseY + Math.sin(angulo) * Math.max(largo, 40);
+
+  const cola = `${baseX - perpX},${baseY - perpY} ${baseX + perpX},${baseY + perpY} ${puntaX},${puntaY}`;
 
   const primeraY = cy - ((lineas.length - 1) * lineH) / 2 + fontSize * 0.35;
   const tspans = lineas
@@ -331,6 +350,41 @@ function areaSolapada(a, b) {
   return ancho > 0 && alto > 0 ? ancho * alto : 0;
 }
 
+// Estima dónde está el personaje: la zona con más detalle del dibujo.
+// Se recorre la viñeta en una cuadrícula y se toma el centro de masa del
+// detalle, con más peso en la mitad inferior, que es donde el prompt pide que
+// esté la figura.
+async function localizarSujeto(arte) {
+  const columnas = 4;
+  const filas = 4;
+  const anchoCelda = Math.floor(VINETA_W / columnas);
+  const altoCelda = Math.floor(VINETA_H / filas);
+
+  let sumaPeso = 0;
+  let sumaX = 0;
+  let sumaY = 0;
+
+  for (let f = 0; f < filas; f++) {
+    for (let c = 0; c < columnas; c++) {
+      const x = c * anchoCelda;
+      const y = f * altoCelda;
+      const detalle = await detalleDeZona(arte, x, y, anchoCelda, altoCelda);
+      if (!Number.isFinite(detalle)) continue;
+
+      // La franja superior suele ser cielo o pared: pesa menos
+      const pesoFila = f === 0 ? 0.35 : (f === 1 ? 0.9 : 1.2);
+      const peso = detalle * pesoFila;
+
+      sumaPeso += peso;
+      sumaX += (x + anchoCelda / 2) * peso;
+      sumaY += (y + altoCelda / 2) * peso;
+    }
+  }
+
+  if (!sumaPeso) return { x: VINETA_W / 2, y: VINETA_H * 0.6 };
+  return { x: sumaX / sumaPeso, y: sumaY / sumaPeso };
+}
+
 // Elige la posición que menos detalle tapa Y que no se pise con las cajas de
 // texto ya colocadas. El solapamiento pesa mucho más que el detalle del dibujo:
 // antes se calculaban posiciones "que no deberían" chocar, y bastaba un cartucho
@@ -364,7 +418,7 @@ async function mejorPosicion(arte, ancho, alto, candidatos, ocupados = []) {
 // mas despejadas del dibujo para no taparle la cara al protagonista.
 async function capaTexto(escena, arte) {
   const partes = [];
-  const ocupados = [];   // cajas ya colocadas, para que nada se pise
+  const ocupados = [];
   const dialogo = (escena.dialogo || '').trim();
   const narracion = (escena.narracion || '').trim();
   const sonido = (escena.onomatopeya || '').trim();
@@ -372,12 +426,19 @@ async function capaTexto(escena, arte) {
   const margen = 40;
   let cartuchoAlto = 0;
 
-  // La narracion siempre va arriba a la izquierda, como en un comic impreso.
+  // Dónde está el personaje: de ahí depende toda la composición
+  const sujeto = (dialogo || sonido) ? await localizarSujeto(arte) : null;
+  const sujetoALaIzquierda = sujeto ? sujeto.x < VINETA_W / 2 : false;
+
+  // La narración va arriba, en la esquina contraria al personaje para no taparlo
   if (narracion) {
     const c = cartuchoNarracion(narracion, { x: margen, y: margen, maxAncho: VINETA_W * 0.6 });
-    cartuchoAlto = c.alto;
-    partes.push(c.svg);
-    ocupados.push({ x: margen, y: margen, w: c.ancho, h: c.alto });
+    const x = sujetoALaIzquierda ? VINETA_W - c.ancho - margen : margen;
+    const cFinal = cartuchoNarracion(narracion, { x, y: margen, maxAncho: VINETA_W * 0.6 });
+
+    cartuchoAlto = cFinal.alto;
+    partes.push(cFinal.svg);
+    ocupados.push({ x, y: margen, w: cFinal.ancho, h: cFinal.alto });
   }
 
   if (dialogo) {
@@ -385,22 +446,24 @@ async function capaTexto(escena, arte) {
     const minX = medida.rx + margen;
     const maxX = VINETA_W - medida.rx - margen;
 
-    // El globo arranca bien por debajo del cartucho, y si aun asi no hay sitio
-    // arriba se le ofrecen posiciones mas abajo.
     const SEPARACION = 46;
     const techo = margen + (cartuchoAlto ? cartuchoAlto + SEPARACION : 0);
     const filaAlta = techo + medida.ry;
 
-    const filas = cartuchoAlto
-      ? [filaAlta, filaAlta + medida.ry * 1.1, VINETA_H * 0.45, VINETA_H * 0.62]
-      : [filaAlta, filaAlta + medida.ry * 0.9, VINETA_H * 0.45];
+    // El globo se pone encima del personaje y del mismo lado, para que la cola
+    // sea corta y quede claro quién habla.
+    const preferidoX = Math.min(Math.max(sujeto.x, minX), maxX);
+    const columnas = [preferidoX, minX, VINETA_W / 2, maxX]
+      .filter(x => x >= minX - 1 && x <= maxX + 1);
 
-    const columnas = [minX, VINETA_W / 2, maxX].filter(x => x >= minX - 1 && x <= maxX + 1);
+    // Filas: siempre por encima del sujeto si cabe
+    const sobreSujeto = Math.max(filaAlta, Math.min(sujeto.y - medida.ry - 90, VINETA_H * 0.5));
+    const filas = [sobreSujeto, filaAlta, filaAlta + medida.ry * 1.1];
 
     const candidatos = [];
     for (const cy of filas) {
       for (const cx of columnas) {
-        // Que la cola del globo no se salga por abajo
+        if (cy - medida.ry < margen) continue;
         if (cy + medida.ry + 70 > VINETA_H) continue;
         candidatos.push({ cx, cy });
       }
@@ -408,28 +471,38 @@ async function capaTexto(escena, arte) {
     if (!candidatos.length) candidatos.push({ cx: VINETA_W / 2, cy: filaAlta });
 
     const pos = await mejorPosicion(arte, medida.ancho, medida.alto, candidatos, ocupados);
-    partes.push(globoDialogo(dialogo, pos));
+
+    // La cola apunta a la parte alta del sujeto (la cabeza), no a sus pies
+    partes.push(globoDialogo(dialogo, {
+      ...pos,
+      hacia: { x: sujeto.x, y: Math.max(sujeto.y - VINETA_H * 0.12, pos.cy + medida.ry + 40) }
+    }));
+
     ocupados.push({
       x: pos.cx - medida.rx,
       y: pos.cy - medida.ry,
       w: medida.ancho,
-      h: medida.alto + 70   // incluye la cola
+      h: medida.alto + 90
     });
   }
 
   if (sonido) {
-    // Tamaño aproximado del estallido, para buscarle un hueco despejado
     const ancho = sonido.length * 104 * factorAncho() + 230;
     const alto = 300;
-
     const media = ancho / 2 + 20;
-    const izq = Math.max(media, VINETA_W * 0.28);
-    const der = Math.min(VINETA_W - media, VINETA_W * 0.72);
+
+    // El estallido acompaña la acción: al lado del personaje, en el lado libre,
+    // y por debajo de los globos.
+    const ladoLibre = sujetoALaIzquierda
+      ? Math.min(VINETA_W - media, VINETA_W * 0.72)
+      : Math.max(media, VINETA_W * 0.28);
+    const ladoSujeto = Math.min(Math.max(sujeto.x, media), VINETA_W - media);
+
     const candidatos = [
-      { cx: izq, cy: VINETA_H * 0.78 },
-      { cx: der, cy: VINETA_H * 0.78 },
-      { cx: izq, cy: VINETA_H * 0.55 },
-      { cx: der, cy: VINETA_H * 0.55 },
+      { cx: ladoLibre, cy: VINETA_H * 0.78 },
+      { cx: ladoSujeto, cy: VINETA_H * 0.82 },
+      { cx: ladoLibre, cy: VINETA_H * 0.6 },
+      { cx: ladoSujeto, cy: VINETA_H * 0.62 },
       { cx: VINETA_W / 2, cy: VINETA_H * 0.86 }
     ];
 

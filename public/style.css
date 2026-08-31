@@ -951,3 +951,63 @@ body {
     #imagePreview { max-height: 20vh !important; }
     #storyInput { max-height: 14vh; }
 }
+
+
+/* ===== La pantalla de foto + historia debe caber sin scroll =====
+   Se compacta todo: el área de carga tenía 3rem de padding y el preview
+   ocupaba casi media pantalla. */
+#generatorContainer .upload-area {
+    padding: 0.9rem 0.8rem !important;
+    border-width: 2px;
+    margin-bottom: 0.6rem;
+}
+
+#generatorContainer .card {
+    padding: 0.9rem !important;
+    box-shadow: none !important;
+}
+
+#generatorContainer .main-content {
+    gap: 0.6rem !important;
+    padding: 14px !important;
+}
+
+#imagePreview {
+    max-height: 22vh !important;
+}
+
+#storyCard {
+    margin-top: 8px !important;
+}
+
+#storyCard h3 { font-size: 1.05rem; margin-bottom: 2px !important; }
+#storyCard p  { font-size: 0.85rem !important; margin-bottom: 8px !important; }
+
+#storyInput {
+    max-height: 13vh;
+    padding: 10px 12px !important;
+    font-size: 0.95rem !important;
+}
+
+#storyHint {
+    margin-top: 8px !important;
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+}
+
+.generate-btn {
+    padding: 0.85rem 1.5rem !important;
+    margin-top: 0.4rem;
+}
+
+.camera-btn {
+    padding: 12px 24px !important;
+    font-size: 1rem !important;
+}
+
+/* Pantallas de portátil con poca altura */
+@media (max-height: 800px) {
+    #imagePreview { max-height: 18vh !important; }
+    #storyInput   { max-height: 11vh; }
+    #storyCard p  { display: none; }
+}

@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v8';
+const MOTOR = 'vinetas-v9';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
