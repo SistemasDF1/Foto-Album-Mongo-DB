@@ -146,13 +146,30 @@ function startCountdown() {
     }, 1000);
 }
 
+// Lado mayor de la foto que se envía. Una captura de webcam en PNG puede pesar
+// varios MB y chocar con el límite de subida; en JPEG a este tamaño baja a unos
+// cientos de KB sin perder detalle facial, que es lo único que necesita el modelo.
+const FOTO_LADO_MAXIMO = 1280;
+const FOTO_CALIDAD = 0.92;
+
 function captureImage() {
+    const anchoOriginal = cameraVideo.videoWidth;
+    const altoOriginal = cameraVideo.videoHeight;
+
+    if (!anchoOriginal || !altoOriginal) {
+        showToast('La cámara aún no está lista, inténtalo de nuevo', 'error');
+        return;
+    }
+
+    const escala = Math.min(1, FOTO_LADO_MAXIMO / Math.max(anchoOriginal, altoOriginal));
+
     const canvas = document.createElement('canvas');
-    canvas.width = cameraVideo.videoWidth;
-    canvas.height = cameraVideo.videoHeight;
+    canvas.width = Math.round(anchoOriginal * escala);
+    canvas.height = Math.round(altoOriginal * escala);
+
     const ctx = canvas.getContext('2d');
     ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
-    imagePreview.src = canvas.toDataURL('image/png');
+    imagePreview.src = canvas.toDataURL('image/jpeg', FOTO_CALIDAD);
 
     cameraModal.style.display = 'none';
     detenerCamara();
@@ -179,7 +196,9 @@ async function generateImage() {
 
     try {
         const formData = new FormData();
-        formData.append('image', dataURLtoFile(imagePreview.src, 'captured.png'));
+        const foto = dataURLtoFile(imagePreview.src, 'foto.jpg');
+        console.log('Foto a enviar:', Math.round(foto.size / 1024), 'KB');
+        formData.append('image', foto);
         formData.append('sexo', window.sexoSeleccionado || 'hombre');
         formData.append('historia', historia);
         formData.append('estilo', window.estiloSeleccionado || 'americano');
@@ -189,10 +208,19 @@ async function generateImage() {
             body: formData
         });
 
-        const data = await response.json();
+        // Un 502 de la plataforma devuelve HTML, no JSON: hay que preverlo
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error(`El servidor respondió con un error (${response.status}). Vuelve a intentarlo.`);
+        }
 
         if (!response.ok) {
-            throw new Error(data.error || 'Error al generar el cómic');
+            // details trae la causa real; sin él solo se ve un mensaje genérico
+            console.error('Error del servidor:', data);
+            const detalle = data.details ? ` (${data.details})` : '';
+            throw new Error(`${data.error || 'Error al generar el cómic'}${detalle}`);
         }
 
         resultImage.src = data.image;

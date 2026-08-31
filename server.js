@@ -62,7 +62,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 12 * 1024 * 1024 }, // margen para fotos de cámaras de alta resolución
   fileFilter: (req, file, cb) => {
     if (MIME_EXT[file.mimetype]) {
       cb(null, true);
@@ -187,11 +187,19 @@ Reglas:
 - Varía los encuadres entre viñetas.
 - La última viñeta debe cerrar la historia.`;
 
-  const result = await model.generateContent([
-    { text: instruccion },
-    { inlineData: { mimeType, data: foto } }
-  ]);
-  const datos = JSON.parse(result.response.text());
+  let datos;
+  try {
+    const result = await model.generateContent([
+      { text: instruccion },
+      { inlineData: { mimeType, data: foto } }
+    ]);
+    datos = JSON.parse(result.response.text());
+  } catch (error) {
+    // Si el guionista falla (filtro de seguridad, timeout, JSON inválido) no se
+    // deja al asistente sin cómic: se arma un guion mínimo con su propia historia.
+    console.error('El guion falló, se usa uno de reserva:', error.message);
+    datos = guionDeReserva(historia, esMujer);
+  }
 
   // El modelo puede devolver de más o de menos: se ajusta al número de celdas.
   const escenas = (datos.escenas || []).slice(0, NUM_VINETAS);
@@ -214,6 +222,34 @@ Reglas:
   return {
     apariencia: (datos.apariencia || '').trim(),
     personaje: datos.personaje || 'ropa casual',
+    escenas
+  };
+}
+
+// Guion mínimo a partir de la historia, para cuando el modelo de texto no
+// responde. Reparte las frases del usuario entre las viñetas.
+function guionDeReserva(historia, esMujer) {
+  const frases = historia
+    .split(/(?<=[.!?])\s+/)
+    .map(f => f.trim())
+    .filter(Boolean);
+
+  const escenas = [];
+  for (let i = 0; i < NUM_VINETAS; i++) {
+    const frase = frases[i % Math.max(1, frases.length)] || historia;
+    escenas.push({
+      accion: frase,
+      narracion: i === 0 ? frase.slice(0, 60) : '',
+      dialogo: '',
+      onomatopeya: ''
+    });
+  }
+
+  return {
+    apariencia: esMujer
+      ? 'Mujer adulta, tal como aparece en la foto, sin barba ni bigote, rostro completamente rasurado.'
+      : 'Hombre adulto, tal como aparece en la foto.',
+    personaje: 'ropa casual sencilla',
     escenas
   };
 }
@@ -274,16 +310,24 @@ Ilustración de alta calidad, línea limpia. Mantén exactamente este mismo esti
 paleta y tipo de trazo en todas las viñetas.`;
 }
 
-// Genera una viñeta y devuelve su buffer PNG.
-async function generarVineta({ model, foto, mimeType, prompt }) {
-  const result = await model.generateContent([
-    { text: prompt },
-    { inlineData: { mimeType, data: foto } }
-  ]);
+// Genera una viñeta y devuelve su buffer. Reintenta una vez: los fallos
+// puntuales de la API son frecuentes y perder una viñeta se nota en la página.
+async function generarVineta({ model, foto, mimeType, prompt, indice = 0 }) {
+  for (let intento = 1; intento <= 2; intento++) {
+    try {
+      const result = await model.generateContent([
+        { text: prompt },
+        { inlineData: { mimeType, data: foto } }
+      ]);
 
-  for (const part of result.response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return Buffer.from(part.inlineData.data, 'base64');
+      for (const part of result.response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+          return Buffer.from(part.inlineData.data, 'base64');
+        }
+      }
+      console.warn(`Viñeta ${indice + 1}: la API no devolvió imagen (intento ${intento})`);
+    } catch (error) {
+      console.warn(`Viñeta ${indice + 1} falló (intento ${intento}): ${error.message}`);
     }
   }
   return null;
@@ -417,7 +461,8 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
         model: modelImagen,
         foto,
         mimeType,
-        prompt: promptVineta({ sexo, apariencia, personaje, escena, estilo, indice })
+        prompt: promptVineta({ sexo, apariencia, personaje, escena, estilo, indice }),
+        indice
       })),
       3
     );
@@ -509,14 +554,23 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al generar el cómic:', error);
+    console.error('Error al generar el cómic:', error?.stack || error);
 
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
 
+    // Mensaje accionable para quien atiende el stand
+    const mensaje = /safety|blocked|policy/i.test(error.message || '')
+      ? 'La IA rechazó la foto o la historia. Prueba con otra foto o cambia la historia.'
+      : /quota|rate|429/i.test(error.message || '')
+        ? 'Se alcanzó el límite de la API de Google. Espera un momento e inténtalo de nuevo.'
+        : /timeout|ETIMEDOUT|ECONNRESET|fetch failed/i.test(error.message || '')
+          ? 'La conexión con la IA falló. Vuelve a intentarlo.'
+          : 'Error al generar el cómic';
+
     res.status(500).json({
-      error: 'Error al generar el cómic',
+      error: mensaje,
       details: error.message
     });
   }
@@ -708,7 +762,7 @@ app.use((err, req, res, next) => {
   console.error('Error de petición:', err.message);
   if (err instanceof multer.MulterError) {
     const msg = err.code === 'LIMIT_FILE_SIZE'
-      ? 'La foto supera el límite de 5MB'
+      ? 'La foto pesa demasiado. Vuelve a tomarla.'
       : `Error al subir la foto: ${err.message}`;
     return res.status(400).json({ error: msg });
   }
