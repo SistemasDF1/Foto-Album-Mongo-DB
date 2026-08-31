@@ -184,7 +184,9 @@ async function generateImage() {
         lanzarConfeti();
 
         if (data.qrCode) {
-            showQRCode(data.qrCode);
+            showQRCode(data.qrCode, data.downloadUrl);
+        } else {
+            console.warn('El servidor no devolvió código QR');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -327,7 +329,7 @@ async function checkApiHealth() {
 }
 
 // Mostrar QR de descarga
-function showQRCode(qrCodeDataUrl) {
+function showQRCode(qrCodeDataUrl, urlDescarga) {
     const qrContainer = document.getElementById('qr-container');
     if (!qrContainer) return;
 
@@ -352,6 +354,17 @@ function showQRCode(qrCodeDataUrl) {
     pie.textContent = 'Apunta la cámara de tu celular';
     pie.style.cssText = 'color:#5C6C75; font-size:0.8rem; text-align:center;';
     tarjeta.appendChild(pie);
+
+    // Respaldo: si la cámara no lee el QR, el enlace sigue siendo utilizable
+    if (urlDescarga) {
+        const enlace = document.createElement('a');
+        enlace.href = urlDescarga;
+        enlace.target = '_blank';
+        enlace.rel = 'noopener';
+        enlace.textContent = 'Abrir en este dispositivo';
+        enlace.style.cssText = 'color:#00684A; font-size:0.85rem; font-weight:600; text-decoration:underline;';
+        tarjeta.appendChild(enlace);
+    }
 
     qrContainer.appendChild(tarjeta);
 }

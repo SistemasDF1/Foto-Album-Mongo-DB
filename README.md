@@ -15,7 +15,7 @@ Flujo de 4 pasos:
 3. **Foto** — con la webcam (cuenta regresiva de 3 segundos) o subiendo un archivo.
 4. **Historia** — el asistente escribe qué le pasa en el cómic (entre 20 y 1200 caracteres). Hay un botón "Dame una idea" con ejemplos.
 
-El resultado es una página vertical (2400×3600) de 6 viñetas con globos de diálogo,
+El resultado es una página de 4 viñetas (2400×2578) con globos de diálogo,
 cartuchos de narración y onomatopeyas, más un **código QR** para que el asistente
 descargue su cómic al celular. Se entrega en JPEG optimizado (~2 MB) para que la
 descarga sea rápida con datos móviles.
@@ -27,15 +27,15 @@ como formas y salen con faltas de ortografía ("PUETRA", "SUPERHÉRCE"). Por eso
 generación va en tres pasos:
 
 1. **Guion y ficha del personaje** — `gemini-2.5-flash` recibe la historia, la foto **y el
-   sexo que eligió la persona**, y devuelve un JSON con 6 escenas (acción visual, diálogo,
+   sexo que eligió la persona**, y devuelve un JSON con 4 escenas (acción visual, diálogo,
    narración y onomatopeya), el vestuario del protagonista y una **ficha física**: sexo, edad
    aproximada, cabello, tono de piel, lentes y si tiene o no barba. Esa ficha se le pasa al
-   ilustrador en las 6 viñetas, y es lo que mantiene al personaje consistente.
+   ilustrador en las 4 viñetas, y es lo que mantiene al personaje consistente.
    El sexo no se infiere de la foto: viene del paso 1 y se impone en la ficha y en cada viñeta.
 2. **Dibujo** — se genera una imagen por viñeta con `gemini-2.5-flash-image` (3 en
    paralelo), cada una con la foto adjunta como referencia facial y con la instrucción
    explícita de **no dibujar una sola letra**.
-3. **Armado** — [`comic.js`](comic.js) monta la retícula 2×3 con Sharp y rotula los
+3. **Armado** — [`comic.js`](comic.js) monta la retícula 2×2 con Sharp y rotula los
    globos con tipografía real. El texto queda perfecto siempre.
 
 Para no taparle la cara al protagonista, cada globo se coloca midiendo la desviación
@@ -228,11 +228,11 @@ Igual, pero fuerza la descarga. El nombre se valida contra `comic_<timestamp>.jp
 
 ## 💰 Costos de la API
 
-- ~$0.039 USD por viñeta × 6 viñetas = **~$0.24 USD por cómic**, más una llamada de
+- ~$0.039 USD por viñeta × 4 viñetas = **~$0.16 USD por cómic**, más una llamada de
   texto para el guion (fracciones de centavo).
-- Un cómic completo tarda entre 25 y 40 segundos.
-- Para abaratarlo, baja el número de viñetas cambiando `COLUMNAS`/`FILAS` en
-  [`comic.js`](comic.js): la retícula, el guion y el armado se ajustan solos.
+- Un cómic completo tarda entre 20 y 30 segundos.
+- El número de viñetas se cambia con `COLUMNAS`/`FILAS` en [`comic.js`](comic.js).
+  El alto de la página, el guion y el armado se ajustan solos.
 
 ## 🐛 Solución de problemas
 

@@ -428,6 +428,11 @@ body::after {
         flex-direction: column;
         align-items: center;
     }
+    /* En pantalla estrecha el QR sube por encima del cómic: es lo que la
+       persona necesita ver primero, y si queda debajo hay que buscarlo. */
+    #qr-container {
+        order: -1;
+    }
     .result-image-container img {
         max-height: 46vh;
     }

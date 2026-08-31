@@ -11,16 +11,28 @@ import sharp from 'sharp';
 // ---------------------------------------------------------------------------
 // Medidas de la página (px)
 // ---------------------------------------------------------------------------
-export const PAGINA = { ancho: 2400, alto: 3600 };
-
 const MARGEN = 70;
 const CANALETA = 40;
 const COLUMNAS = 2;
-const FILAS = 3;
+const FILAS = 2;
 export const NUM_VINETAS = COLUMNAS * FILAS;
 
-const VINETA_W = Math.floor((PAGINA.ancho - MARGEN * 2 - CANALETA * (COLUMNAS - 1)) / COLUMNAS);
-const VINETA_H = Math.floor((PAGINA.alto - MARGEN * 2 - CANALETA * (FILAS - 1)) / FILAS);
+const ANCHO_PAGINA = 2400;
+
+// Proporción de cada viñeta (alto / ancho). Cerca de 1 porque el modelo devuelve
+// imágenes cuadradas: cuanto más se aleje, más se recorta el dibujo.
+const ASPECTO_VINETA = 1.08;
+
+const VINETA_W = Math.floor((ANCHO_PAGINA - MARGEN * 2 - CANALETA * (COLUMNAS - 1)) / COLUMNAS);
+const VINETA_H = Math.round(VINETA_W * ASPECTO_VINETA);
+
+// El alto de la página sale de la retícula, no al revés. Así, cambiar COLUMNAS o
+// FILAS ajusta la página sola sin deformar ni recortar de más las viñetas.
+export const PAGINA = {
+  ancho: ANCHO_PAGINA,
+  alto: MARGEN * 2 + FILAS * VINETA_H + CANALETA * (FILAS - 1)
+};
+
 const BORDE = 8;
 
 // Cadenas de fuentes para la rotulacion.
