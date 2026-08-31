@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.ico?v=2" sizes="any">
     <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -743,12 +743,8 @@
                 div.innerHTML = muestra + '<span style="font-size:0.9rem;font-weight:700;color:#001E2B;">' + estilo.name + '</span>';
 
                 div.addEventListener('click', () => {
-                    document.querySelectorAll('.style-option').forEach(opt => {
-                        opt.style.borderColor = '#e9ecef';
-                        opt.style.transform = 'none';
-                    });
-                    div.style.borderColor = '#434444';
-                    div.style.transform = 'scale(1.05)';
+                    document.querySelectorAll('.style-option').forEach(opt => opt.classList.remove('seleccionado'));
+                    div.classList.add('seleccionado');
                     window.estiloSeleccionado = estilo.id;
                     document.getElementById('btn-style-next').disabled = false;
                 });
@@ -765,12 +761,8 @@
             // Paso 1: Hombre o mujer
             document.querySelectorAll('.sexo-option').forEach(function(opcion) {
                 opcion.addEventListener('click', function() {
-                    document.querySelectorAll('.sexo-option').forEach(function(o) {
-                        o.style.borderColor = '#e9ecef';
-                        o.style.transform = 'none';
-                    });
-                    opcion.style.borderColor = '#00ED64';
-                    opcion.style.transform = 'scale(1.05)';
+                    document.querySelectorAll('.sexo-option').forEach(function(o) { o.classList.remove('seleccionado'); });
+                    opcion.classList.add('seleccionado');
                     window.sexoSeleccionado = opcion.getAttribute('data-sexo');
                     document.getElementById('btn-sexo-next').disabled = false;
                 });
@@ -801,7 +793,7 @@
     </script>
     <div class="container" id="generatorContainer" style="display:none; min-height:100vh; display:none; align-items:center; justify-content:center; padding:12px;">
         <main class="main-content" style="position: relative; margin: 32px auto; text-align: center; background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 18px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); width: 90%; max-width: 500px; box-sizing: border-box; max-height: 92vh; overflow-y: auto;">
-            <div class="upload-section">
+            <div class="upload-section" id="fotoSection">
                 <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
                     
                     <div class="upload-area" id="uploadArea">
@@ -823,7 +815,12 @@
                     </div>
                 </div>
 
-                <!-- Paso 4: la historia, visible solo cuando ya hay foto -->
+                <!-- Botón para pasar de la foto a la historia -->
+                <button class="generate-btn" id="btnFotoNext" style="display:none;">
+                    <span class="btn-text">Continuar</span>
+                </button>
+
+                <!-- Paso siguiente: la historia, en su propia pantalla -->
                 <div class="card story-card" id="storyCard" style="display: none; margin-top: 18px; text-align: left;">
                     <h3 style="font-size:1.6rem; font-weight:800; margin-bottom:6px; line-height:1.2;">Ahora escribe tu historia</h3>
                     <p style="color:#ffffff; opacity:0.85; font-size:0.95rem; margin-bottom:12px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
@@ -896,7 +893,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=20"></script>
+    <script src="app.js?v=21"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
@@ -904,6 +901,9 @@
             document.getElementById('resultSection').style.display = 'none';
             document.getElementById('cameraModal').style.display = 'none';
             document.getElementById('storyCard').style.display = 'none';
+            document.getElementById('generateBtn').style.display = 'none';
+            document.getElementById('fotoSection').style.display = 'block';
+            document.getElementById('btnFotoNext').style.display = 'none';
             restaurarAnchoPanel();
 
             // Limpiar campos
@@ -926,10 +926,7 @@
             document.getElementById('style-section').style.display = 'none';
             document.getElementById('btn-style-next').disabled = true;
             document.getElementById('btn-sexo-next').disabled = true;
-            document.querySelectorAll('.sexo-option').forEach(function(o) {
-                o.style.borderColor = '#e9ecef';
-                o.style.transform = 'none';
-            });
+            document.querySelectorAll('.sexo-option').forEach(function(o) { o.classList.remove('seleccionado'); });
             document.getElementById('inicioContainer').style.display = 'flex';
             document.body.style.overflow = '';
             window.scrollTo({ top: 0, behavior: 'smooth' });

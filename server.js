@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v12';
+const MOTOR = 'vinetas-v14';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -330,9 +330,11 @@ SIN MARCO (obligatorio):
 La ilustración llena TODA la imagen, de borde a borde, a sangre.
 NO dibujes marco, recuadro, borde negro, margen ni franja blanca alrededor.
 
-COMPOSICIÓN:
-Deja la parte superior de la viñeta relativamente despejada (cielo, pared o fondo
-simple) y coloca al personaje y la acción en la mitad inferior.
+COMPOSICIÓN (importante):
+La cabeza del protagonista debe verse COMPLETA y dentro del encuadre, nunca
+cortada por el borde superior. Deja algo de aire despejado por encima de su
+cabeza (cielo, pared o fondo simple), donde después se colocará el texto.
+Encuadra de forma que se le vea bien la cara.
 
 ESTILO ARTÍSTICO:
 ${descripcionEstilo}.

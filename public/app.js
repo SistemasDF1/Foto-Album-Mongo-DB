@@ -22,6 +22,8 @@ const storyHint = document.getElementById('storyHint');
 const storyExampleBtn = document.getElementById('storyExampleBtn');
 const loadingMsg = document.getElementById('loadingMsg');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
+const btnFotoNext = document.getElementById('btnFotoNext');
+const fotoSection = document.getElementById('fotoSection');
 
 const HISTORIA_MIN = 20;
 const HISTORIA_MAX = 1200;
@@ -52,6 +54,7 @@ generateBtn.addEventListener('click', generateImage);
 downloadBtn.addEventListener('click', downloadImage);
 newBtn.addEventListener('click', () => reiniciarProceso());
 cameraBtn.addEventListener('click', openCamera);
+if (btnFotoNext) btnFotoNext.addEventListener('click', irAHistoria);
 captureBtn.addEventListener('click', startCountdown);
 closeCameraBtn.addEventListener('click', closeCamera);
 
@@ -123,8 +126,12 @@ removeBtn.addEventListener('click', () => {
     imagePreview.src = '';
     previewContainer.style.display = 'none';
     storyCard.style.display = 'none';
+    if (btnFotoNext) btnFotoNext.style.display = 'none';
     checkFormValid();
 });
+
+// El botón de crear solo se ve en el paso de la historia
+generateBtn.style.display = 'none';
 
 // Funciones
 function dataURLtoFile(dataurl, filename) {
@@ -149,13 +156,36 @@ function checkFormValid() {
     generateBtn.disabled = !(tieneFoto() && historia.length >= HISTORIA_MIN);
 }
 
-// Cuando ya hay foto, se revela el paso de la historia
+// Con la foto tomada se ofrece continuar; la historia va en el paso siguiente,
+// así ninguna de las dos pantallas necesita scroll.
 function mostrarPasoHistoria() {
     previewContainer.style.display = 'block';
+    if (btnFotoNext) btnFotoNext.style.display = 'block';
+    checkFormValid();
+}
+
+// Paso de la foto al de la historia
+function irAHistoria() {
+    if (!tieneFoto()) {
+        showToast('Primero toma tu foto', 'error');
+        return;
+    }
+    if (fotoSection) fotoSection.style.display = 'none';
+    if (btnFotoNext) btnFotoNext.style.display = 'none';
+
     storyCard.style.display = 'block';
+    generateBtn.style.display = 'block';
     actualizarAviso();
     checkFormValid();
     storyInput.focus();
+}
+
+// Vuelta al paso de la foto
+function volverAFoto() {
+    if (fotoSection) fotoSection.style.display = 'block';
+    storyCard.style.display = 'none';
+    generateBtn.style.display = 'none';
+    if (btnFotoNext) btnFotoNext.style.display = tieneFoto() ? 'block' : 'none';
 }
 
 // Iniciar cuenta regresiva
