@@ -18,6 +18,7 @@ const countdownEl = document.getElementById('countdown');
 const storyCard = document.getElementById('storyCard');
 const storyInput = document.getElementById('storyInput');
 const storyCounter = document.getElementById('storyCounter');
+const storyHint = document.getElementById('storyHint');
 const storyExampleBtn = document.getElementById('storyExampleBtn');
 const loadingMsg = document.getElementById('loadingMsg');
 
@@ -55,8 +56,31 @@ closeCameraBtn.addEventListener('click', closeCamera);
 
 storyInput.addEventListener('input', () => {
     storyCounter.textContent = `${storyInput.value.length} / ${HISTORIA_MAX}`;
+    actualizarAviso();
     checkFormValid();
 });
+
+// Explica por qué el botón está apagado: sin esto parece que la app se trabó.
+function actualizarAviso() {
+    if (!storyHint) return;
+
+    const escrito = storyInput.value.trim().length;
+    const faltan = HISTORIA_MIN - escrito;
+
+    if (faltan > 0) {
+        storyHint.textContent = escrito === 0
+            ? `Escribe al menos ${HISTORIA_MIN} caracteres para poder crear tu cómic`
+            : `Te ${faltan === 1 ? 'falta' : 'faltan'} ${faltan} ${faltan === 1 ? 'carácter' : 'caracteres'} para poder continuar`;
+        storyHint.style.background = 'rgba(255,226,18,0.18)';
+        storyHint.style.borderColor = 'rgba(255,226,18,0.55)';
+        storyHint.style.color = '#FFE212';
+    } else {
+        storyHint.textContent = '¡Listo! Ya puedes crear tu cómic';
+        storyHint.style.background = 'rgba(0,237,100,0.18)';
+        storyHint.style.borderColor = 'rgba(0,237,100,0.55)';
+        storyHint.style.color = '#00ED64';
+    }
+}
 
 storyExampleBtn.addEventListener('click', () => {
     const ejemplo = EJEMPLOS_HISTORIA[Math.floor(Math.random() * EJEMPLOS_HISTORIA.length)];
@@ -99,6 +123,7 @@ function checkFormValid() {
 function mostrarPasoHistoria() {
     previewContainer.style.display = 'block';
     storyCard.style.display = 'block';
+    actualizarAviso();
     checkFormValid();
     storyInput.focus();
 }

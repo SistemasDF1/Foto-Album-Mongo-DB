@@ -18,6 +18,8 @@ services:
     envVars:
       - key: GOOGLE_API_KEY
         sync: false        # se captura en el panel, no se versiona
+      - key: MONGODB_URI
+        sync: false        # se captura en el panel, no se versiona
       - key: STORAGE_DIR
         value: /var/data
       - key: NODE_VERSION

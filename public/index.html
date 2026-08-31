@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MongoDB · Crea tu cómic con IA</title>
-    <link rel="stylesheet" href="style.css?v=8">
+    <link rel="stylesheet" href="style.css?v=9">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -879,6 +879,11 @@
                         <button type="button" id="storyExampleBtn" style="background:none; border:none; color:#ffffff; text-decoration:underline; cursor:pointer; font-size:0.9rem; padding:0;">Dame una idea</button>
                         <span id="storyCounter" style="color:#ffffff; font-size:0.85rem; opacity:0.85;">0 / 1200</span>
                     </div>
+
+                    <!-- Aviso de por qué el botón sigue apagado -->
+                    <div id="storyHint" style="margin-top:12px; padding:12px 14px; border-radius:12px; font-size:0.95rem; font-weight:600; text-align:center; background:rgba(255,226,18,0.18); border:1px solid rgba(255,226,18,0.55); color:#FFE212;">
+                        Escribe al menos 20 caracteres para poder crear tu cómic
+                    </div>
                 </div>
 
                 <button class="generate-btn" id="generateBtn" disabled>
@@ -936,7 +941,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=8"></script>
+    <script src="app.js?v=9"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
@@ -951,6 +956,7 @@
             document.getElementById('previewContainer').style.display = 'none';
             document.getElementById('storyInput').value = '';
             document.getElementById('storyCounter').textContent = '0 / 1200';
+            if (typeof actualizarAviso === 'function') actualizarAviso();
             document.getElementById('generateBtn').disabled = true;
 
             const qrContainer = document.getElementById('qr-container');
