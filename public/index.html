@@ -6,7 +6,7 @@
     <title>MongoDB · Crea tu cómic con IA</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=17">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -715,10 +715,10 @@
             <button id="btn-sexo-next" style="background: #00EB64; color: #001E2B; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 26px; box-shadow: 0 4px 15px rgba(0, 235, 100, 0.35);" disabled>Continuar</button>
         </div>
         <!-- Paso 3: Estilo de dibujo -->
-        <div id="style-section" style="display:none;flex-direction:column;align-items:center;position:relative;text-align:center;background: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);padding:40px;border-radius:20px;box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45);">
+        <div id="style-section" style="display:none;flex-direction:column;align-items:center;position:relative;text-align:center;background: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);padding:32px 36px;border-radius:20px;box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45);width:min(92vw, 940px);max-height:94vh;">
             <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-weight: bold;">Elige el estilo de dibujo</h2>
             <p style="color:#ffffff; opacity:0.85; margin-bottom:20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Así se verá tu cómic</p>
-            <div class="styles-grid" id="styles-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:16px;max-width:720px;margin-bottom:20px;">
+            <div class="styles-grid" id="styles-grid" style="display:grid;margin-bottom:18px;">
                 <!-- Se llena con JS -->
             </div>
             <button id="btn-style-next" style="background: #00EB64; color: #001E2B; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; box-shadow: 0 4px 15px rgba(0, 235, 100, 0.35);" disabled>Continuar</button>
@@ -907,7 +907,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=16"></script>
+    <script src="app.js?v=17"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
