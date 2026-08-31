@@ -1,0 +1,51 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (¡contiene la API key!)
+.env
+
+# Archivos generados en tiempo de ejecución
+uploads/
+downloads/
+historias/
+
+# Logs
+*.log
+npm-debug.log*
+
+# ---------------------------------------------------------------------------
+# Fuentes de marca: NO se versionan.
+# Euclid Circular A es una fuente comercial y MongoDB Value Serif es propietaria,
+# así que no pueden redistribuirse en un repositorio público.
+# Para desplegar, cópialas a public/fonts/ — ver la sección "Fuentes" del README.
+# ---------------------------------------------------------------------------
+public/fonts/
+mongo db-fonts/
+*.otf
+*.ttf
+
+# Material de marca original (Brand Book, ESG Report, paquetes completos)
+MongoDB-selected-assets/
+*.zip
+
+# Documentos de trabajo
+*.docx
+~$*
+
+# Assets del proyecto anterior (generador de cartas FIFA) y fotos de prueba.
+# La app solo usa public/img/mongodb/, así que se versiona unicamente eso.
+public/img/*
+!public/img/mongodb/
+public/kyndryl/
+public/qrious.min.js
+public/icons/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo

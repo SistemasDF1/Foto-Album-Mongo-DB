@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB · Crea tu cómic con IA</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            font-family: 'Euclid Circular A', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        /* Estilos para botón de cámara */
+        .camera-btn {
+            background: linear-gradient(135deg, #00ED64 0%, #00684A 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px auto;
+            min-width: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .camera-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+            background: #194875;
+        }
+        
+        .camera-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .camera-btn svg {
+            transition: transform 0.3s ease;
+        }
+        
+        .camera-btn:hover svg {
+            transform: scale(1.1);
+        }
+        
+        .camera-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .camera-btn:hover::before {
+            left: 100%;
+        }
+        
+        /* Estilos para botón de generar imagen */
+        .generate-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 18px 36px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 25px auto;
+            min-width: 220px;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(40, 167, 69, 0.4);
+            background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+        }
+        
+        .generate-btn:active:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+        
+        .generate-btn:disabled {
+            background: #194875;
+            cursor: not-allowed;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.2);
+            transform: none;
+        }
+        
+        .generate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s;
+        }
+        
+        .generate-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+        
+        /* Estilos para modal de cámara */
+        .camera-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .camera-modal[style*="block"] {
+            display: flex !important;
+        }
+        
+        .camera-content {
+            background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            max-width: 800px;
+            height: 859px;
+            width: 100%;
+            max-height: 150%;
+            box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45);
+        }
+        
+        #cameraVideo {
+            width: 100%;
+            max-width: 800px;
+            height: 820px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.3);
+            background: #000;
+        }
+        
+        #captureBtn, #closeCameraBtn {
+            background: #e55319;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        #captureBtn:hover, #closeCameraBtn:hover {
+            background: #194875;
+            transform: translateY(-2px);
+        }
+        
+        /*  loader    */
+        
+        /* From uiverse.io by @JulioCodesSM */
+.loader {
+ width: 50px;
+ height: 50px;
+ position: relative;
+ transform: translateX(-25px);
+ /* Compensating for the left of 50px in the keyframe. */
+}
+
+.loader::before,
+.loader::after {
+ content: '';
+ position: absolute;
+ width: inherit;
+ height: inherit;
+ border-radius: 50%;
+ mix-blend-mode: multiply;
+ animation: rotate9 1s infinite cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.loader::before {
+ background-color: #e55319;
+}
+
+.loader::after {
+ background-color: #194875;
+ animation-delay: .5s;
+}
+
+@keyframes rotate9 {
+ 0%,100% {
+  left: 50px;
+ }
+
+ 25% {
+  transform: scale(.3);
+ }
+
+ 50% {
+  left: 0;
+ }
+
+ 75% {
+  transform: scale(1);
+ }
+}
+        
+        
+        /*  loader    */
+        .logo-corner {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            transform: none;
+            z-index: 1000;
+            text-align: left;
+            pointer-events: auto;
+        }
+        .logo-corner img {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            opacity: 0.95;
+            transition: opacity 0.3s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+        .logo-corner img:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+        /* Estilo GLS (glass) para ventanas */
+        .gls-window {
+            background: rgba(18, 78, 140, 0.38) !important;
+            border: 1px solid rgba(120, 180, 255, 0.45) !important;
+            box-shadow: 0 12px 40px rgba(6, 30, 60, 0.35) !important;
+            backdrop-filter: blur(16px) saturate(170%);
+            -webkit-backdrop-filter: blur(16px) saturate(170%);
+        }
+        .gls-window h2,
+        .gls-window h3,
+        .gls-window p,
+        .gls-window label,
+        .gls-window span,
+        .gls-window div {
+            color: #eaf3ff;
+        }
+        .gls-window input {
+            background: rgba(8, 40, 90, 0.35);
+            color: #ffffff;
+            border: 1px solid rgba(120, 180, 255, 0.45);
+        }
+        .gls-window input::placeholder {
+            color: rgba(234, 243, 255, 0.75);
+        }
+        .avatar {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 5px;
+            border-radius: 50%;
+        }
+        .avatar.selected img {
+           
+            box-shadow: 0 0 15px rgba(67, 68, 68, 0.5);
+            transform: scale(1.05);
+        }
+        .hair-option.selected {
+            background: #434444ff !important;
+            color: white !important;
+            border-color: #434444ff !important;
+        }
+        .skin-option.selected {
+            background: #434444ff !important;
+            border-color: #434444ff !important;
+        }
+        .skin-option.selected span {
+            color: white !important;
+        }
+        .accessory-option.selected {
+            background: #434444ff !important;
+            color: white !important;
+            border-color: #434444ff !important;
+        }
+
+        /* Media Queries para Responsividad */
+        @media (max-width: 768px) {
+            .logo-corner img {
+                width: 200px;
+                top: 10px;
+                left: 10px;
+            }
+            
+            .title {
+                font-size: 1.8rem !important;
+                margin-bottom: 40px !important;
+            }
+            
+            .avatars-container {
+                flex-direction: column !important;
+                gap: 20px !important;
+                align-items: center !important;
+            }
+            
+            .avatar img {
+                width: 150px !important;
+                height: 150px !important;
+            }
+            
+            #inicioContainer {
+                padding-top: 25vh !important;
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+            }
+            
+            .name-section, .customization-section {
+                min-width: 90% !important;
+                max-width: 95% !important;
+                padding: 15px !important;
+                margin: 5px !important;
+                position: fixed !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                max-height: 95vh !important;
+                overflow-y: auto !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* Ajustes específicos para customization-section en móvil */
+            .customization-section {
+                min-width: 95% !important;
+                max-width: 98% !important;
+                padding: 10px !important;
+            }
+            
+            /* Ajustes para el contenido de deseos */
+            .customization-section h3 {
+                font-size: 1rem !important;
+                margin-bottom: 8px !important;
+            }
+            
+            .customization-section p {
+                font-size: 0.8rem !important;
+                margin-bottom: 10px !important;
+            }
+            
+            .accessory-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                max-width: 100% !important;
+                margin: 0 auto !important;
+            }
+            
+            .accessory-option {
+                padding: 8px !important;
+                font-size: 0.7rem !important;
+                border-radius: 8px !important;
+                text-align: center !important;
+            }
+            
+            /* Contador de accesorios en móvil */
+            .customization-section span {
+                font-size: 0.8rem !important;
+                padding: 4px 10px !important;
+            }
+            
+            /* Botón continuar en móvil */
+            #continue-photo-button {
+                padding: 10px 20px !important;
+                font-size: 0.9rem !important;
+                margin-top: 15px !important;
+            }
+            
+            /* Ajustes específicos para el generador en móvil */
+            #generatorContainer .main-content {
+                width: 95% !important;
+                max-width: 95% !important;
+                min-width: unset !important;
+                max-height: 80vh !important;
+                margin-top: 10px !important;
+                padding: 15px !important;
+                box-sizing: border-box !important;
+            }
+            
+            .camera-btn, .generate-btn {
+                padding: 12px 20px !important;
+                font-size: 0.9rem !important;
+                margin: 8px auto !important;
+                width: 100% !important;
+                max-width: 200px !important;
+                box-sizing: border-box !important;
+            }
+            
+            
+            h2 {
+                font-size: 1.3rem !important;
+            }
+            
+            h3 {
+                font-size: 1.1rem !important;
+            }
+            
+            button {
+                padding: 10px 20px !important;
+                font-size: 1rem !important;
+            }
+
+            .styles-grid {
+                grid-template-columns: repeat(2, minmax(130px, 1fr)) !important;
+                gap: 14px !important;
+                max-width: 100% !important;
+                padding: 0 6px !important;
+            }
+
+            .style-option {
+                padding: 12px !important;
+                border-radius: 12px !important;
+            }
+
+            #style-section {
+                padding: 20px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo-corner {
+                position: fixed !important;
+                top: 10px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 100% !important;
+                text-align: center !important;
+            }
+            
+            .logo-corner img {
+                width: 220px;
+            }
+            
+            .title {
+                font-size: 1.5rem !important;
+                margin-bottom: 30px !important;
+            }
+            
+            .avatar img {
+                width: 150px !important;
+                height: 150px !important;
+            }
+            
+            #inicioContainer {
+                padding-top: 0vh !important;
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+            }
+            
+            .name-section, .customization-section {
+                min-width: 98% !important;
+                max-width: 99% !important;
+                padding: 8px !important;
+                max-height: 98vh !important;
+                overflow-y: auto !important;
+                box-sizing: border-box !important;
+                margin: 2px !important;
+            }
+            
+            /* Ajustes específicos para deseos en móvil pequeño */
+            .customization-section h3 {
+                font-size: 0.9rem !important;
+                margin-bottom: 5px !important;
+            }
+            
+            .customization-section p {
+                font-size: 0.7rem !important;
+                margin-bottom: 8px !important;
+            }
+            
+            .accessory-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 6px !important;
+                max-width: 100% !important;
+            }
+            
+            .accessory-option {
+                padding: 6px !important;
+                font-size: 0.65rem !important;
+                border-radius: 6px !important;
+                min-height: 40px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            /* Contador más pequeño */
+            .customization-section span {
+                font-size: 0.7rem !important;
+                padding: 3px 8px !important;
+            }
+            
+            #continue-photo-button {
+                padding: 8px 16px !important;
+                font-size: 0.8rem !important;
+                margin-top: 10px !important;
+            }
+            
+            /* Ajustes específicos para el generador en móvil pequeño */
+            #generatorContainer .main-content {
+                width: 98% !important;
+                max-width: 98% !important;
+                min-width: unset !important;
+                max-height: 85vh !important;
+                margin-top: 8px !important;
+                padding: 10px !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            }
+
+            #generatorContainer .card {
+                margin-top: 0 !important;
+            }
+            
+            .camera-btn, .generate-btn {
+                padding: 10px 15px !important;
+                font-size: 0.8rem !important;
+                margin: 5px auto !important;
+                width: 100% !important;
+                max-width: 180px !important;
+                box-sizing: border-box !important;
+            }
+            
+            .result-image-container img {
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: 40vh !important;
+            }
+            
+            h2 {
+                font-size: 1.2rem !important;
+            }
+            
+            h3 {
+                font-size: 1rem !important;
+            }
+
+            .styles-grid {
+                grid-template-columns: repeat(2, minmax(120px, 1fr)) !important;
+                gap: 10px !important;
+                max-width: 100% !important;
+                padding: 0 4px !important;
+            }
+
+            .style-option {
+                padding: 10px !important;
+                border-radius: 10px !important;
+            }
+
+            #style-section {
+                padding: 15px !important;
+            }
+
+            .frame-options-container {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+            }
+
+            .frame-option {
+                width: 100% !important;
+                padding: 10px !important;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .logo-corner img {
+                width: 250px;
+            }
+            
+            .avatars-container {
+                gap: 30px !important;
+            }
+            
+            .avatar img {
+                width: 150px !important;
+                height: 150px !important;
+            }
+            
+            .name-section, .customization-section, .main-content {
+                min-width: 500px !important;
+                max-width: 80% !important;
+            }
+            
+            .accessory-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+                max-width: 550px !important;
+            }
+        }
+        
+        /* Ajustes para orientación landscape en móviles */
+        @media (max-height: 500px) and (orientation: landscape) {
+            #inicioContainer {
+                padding-top: 1vh !important;
+            }
+            
+            .name-section, .customization-section {
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+            }
+            
+            #generatorContainer .main-content {
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+                width: 90% !important;
+                padding: 8px !important;
+            }
+            
+            .title {
+                margin-bottom: 20px !important;
+                font-size: 1.3rem !important;
+            }
+        }
+        
+        /* Ajuste especial para pantallas muy pequeñas */
+        @media (max-height: 600px) {
+            #inicioContainer {
+                padding-top: 20vh !important;
+            }
+            
+            .name-section, .customization-section {
+                max-height: 85vh !important;
+                overflow-y: auto !important;
+            }
+            
+            #generatorContainer .main-content {
+                max-height: 85vh !important;
+                overflow-y: auto !important;
+                padding: 8px !important;
+            }
+        }
+        
+        /* Estilos adicionales para prevenir overflow */
+        .upload-section, .result-section {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        .card {
+            box-sizing: border-box !important;
+            width: 100% !important;
+          
+        }
+        
+        .preview-container img, .result-image-container img {
+            max-width: 100% !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+        }
+        
+        @media (max-width: 768px) {
+            .preview-container img {
+                max-height: 25vh !important;
+            }
+            
+            .result-image-container img {
+                max-height: 60vh !important;
+                object-fit: contain !important;
+            }
+
+            .result-section {
+                width: 100% !important;
+            }
+
+            .result-card {
+                width: 100% !important;
+                padding: 16px !important;
+            }
+
+            #generatorContainer .main-content {
+                max-height: 95vh !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .preview-container img {
+                max-height: 20vh !important;
+            }
+            
+            .result-image-container img {
+                max-height: 70vh !important;
+                object-fit: contain !important;
+            }
+
+            .result-section {
+                width: 100% !important;
+            }
+
+            .result-card {
+                width: 100% !important;
+                padding: 12px !important;
+            }
+
+            #generatorContainer .main-content {
+                max-height: 96vh !important;
+            }
+        }
+    </style>
+</head>
+    <body oncontextmenu="return false;">
+    <div class="mdb-brand-bar">
+        <img src="img/mongodb/MongoDB_White.svg" alt="MongoDB">
+    </div>
+
+    
+
+    <div class="container" id="inicioContainer" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding-top:25vh; transition: opacity 0.3s;">
+        <!-- Paso 1: Hombre o mujer -->
+        <div id="sexo-section" style="display: none; position: relative; text-align: center; background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 40px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); min-width: 320px; margin-bottom: 30px;">
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-weight: bold;">¿Cómo te dibujamos?</h2>
+            <p style="color:#ffffff; opacity:0.85; margin-bottom:24px; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Elige para que tu personaje salga como tú</p>
+            <div id="sexo-grid" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+                <div class="sexo-option" data-sexo="mujer" style="width:150px; padding:22px 16px; background:#ffffff; border:2px solid #e9ecef; border-radius:18px; cursor:pointer; transition:all 0.3s ease; display:flex; flex-direction:column; align-items:center; gap:10px;">
+                    <div style="font-size:3rem; line-height:1;">&#128105;</div>
+                    <span style="font-size:1.05rem; font-weight:700; color:#001E2B;">Mujer</span>
+                </div>
+                <div class="sexo-option" data-sexo="hombre" style="width:150px; padding:22px 16px; background:#ffffff; border:2px solid #e9ecef; border-radius:18px; cursor:pointer; transition:all 0.3s ease; display:flex; flex-direction:column; align-items:center; gap:10px;">
+                    <div style="font-size:3rem; line-height:1;">&#128104;</div>
+                    <span style="font-size:1.05rem; font-weight:700; color:#001E2B;">Hombre</span>
+                </div>
+            </div>
+            <button id="btn-sexo-next" style="background: linear-gradient(135deg, #00ED64, #00684A); color: white; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 26px; box-shadow: 0 4px 15px rgba(0, 237, 100, 0.35);" disabled>Continuar</button>
+        </div>
+        <!-- Paso 3: Estilo de dibujo -->
+        <div id="style-section" style="display:none;flex-direction:column;align-items:center;position:relative;text-align:center;background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);padding:40px;border-radius:20px;box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45);">
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-weight: bold;">Elige el estilo de dibujo</h2>
+            <p style="color:#ffffff; opacity:0.85; margin-bottom:20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Así se verá tu cómic</p>
+            <div class="styles-grid" id="styles-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:16px;max-width:720px;margin-bottom:20px;">
+                <!-- Se llena con JS -->
+            </div>
+            <button id="btn-style-next" style="background: linear-gradient(135deg, #00ED64, #00684A); color: white; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; box-shadow: 0 4px 15px rgba(0, 237, 100, 0.35);" disabled>Continuar</button>
+        </div>
+    </div>
+    <script>
+        // Estilos de dibujo. El id debe coincidir con las claves de ESTILOS en server.js
+        const ESTILOS_COMIC = [
+            { id: 'americano', name: 'Superhéroe', emoji: '🦸', color: 'linear-gradient(135deg, #e63946, #1d3557)' },
+            { id: 'manga',     name: 'Manga',      emoji: '⛩️', color: 'linear-gradient(135deg, #f8f9fa, #495057)' },
+            { id: 'caricatura',name: 'Caricatura', emoji: '🎨', color: 'linear-gradient(135deg, #ffbe0b, #fb5607)' },
+            { id: 'acuarela',  name: 'Acuarela',   emoji: '🖌️', color: 'linear-gradient(135deg, #a8dadc, #cdb4db)' },
+            { id: 'noir',      name: 'Noir',       emoji: '🕵️', color: 'linear-gradient(135deg, #212529, #6c757d)' },
+            { id: 'retro',     name: 'Retro 60s',  emoji: '📻', color: 'linear-gradient(135deg, #ffd166, #ef476f)' },
+            { id: 'chibi',     name: 'Chibi',      emoji: '🐰', color: 'linear-gradient(135deg, #ffc8dd, #bde0fe)' },
+            { id: 'pixar',     name: '3D Animado', emoji: '🎬', color: 'linear-gradient(135deg, #4cc9f0, #4361ee)' }
+        ];
+
+        function cargarEstilos() {
+            const grid = document.getElementById('styles-grid');
+            grid.innerHTML = '';
+
+            ESTILOS_COMIC.forEach(estilo => {
+                const div = document.createElement('div');
+                div.className = 'style-option';
+                div.style.cssText = 'padding:14px;background:#ffffff;border:2px solid #e9ecef;border-radius:15px;cursor:pointer;transition:all 0.3s ease;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;';
+                div.innerHTML = '<div style="width:100%;height:70px;border-radius:10px;background:' + estilo.color + ';display:flex;align-items:center;justify-content:center;font-size:2rem;">' + estilo.emoji + '</div>' +
+                                '<span style="font-size:0.9rem;font-weight:600;color:#333;">' + estilo.name + '</span>';
+
+                div.addEventListener('click', () => {
+                    document.querySelectorAll('.style-option').forEach(opt => {
+                        opt.style.borderColor = '#e9ecef';
+                        opt.style.transform = 'none';
+                    });
+                    div.style.borderColor = '#434444';
+                    div.style.transform = 'scale(1.05)';
+                    window.estiloSeleccionado = estilo.id;
+                    document.getElementById('btn-style-next').disabled = false;
+                });
+                grid.appendChild(div);
+            });
+        }
+
+        // Multipasos: hombre/mujer -> estilo -> (foto + historia)
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('style-section').style.display = 'none';
+            // El wizard arranca preguntando como dibujar al personaje
+            document.getElementById('sexo-section').style.display = 'block';
+
+            // Paso 1: Hombre o mujer
+            document.querySelectorAll('.sexo-option').forEach(function(opcion) {
+                opcion.addEventListener('click', function() {
+                    document.querySelectorAll('.sexo-option').forEach(function(o) {
+                        o.style.borderColor = '#e9ecef';
+                        o.style.transform = 'none';
+                    });
+                    opcion.style.borderColor = '#00ED64';
+                    opcion.style.transform = 'scale(1.05)';
+                    window.sexoSeleccionado = opcion.getAttribute('data-sexo');
+                    document.getElementById('btn-sexo-next').disabled = false;
+                });
+            });
+
+            document.getElementById('btn-sexo-next').addEventListener('click', function() {
+                if (!window.sexoSeleccionado) return;
+                document.getElementById('sexo-section').style.display = 'none';
+                document.getElementById('style-section').style.display = 'flex';
+                cargarEstilos();
+            });
+
+            // Paso 2: Estilo -> pasa a la foto
+            document.getElementById('btn-style-next').addEventListener('click', function() {
+                if (!window.estiloSeleccionado) return;
+                document.getElementById('style-section').style.display = 'none';
+                document.getElementById('inicioContainer').style.display = 'none';
+                document.getElementById('generatorContainer').style.display = 'block';
+                abrirCamaraAutomatica();
+            });
+        });
+
+        function abrirCamaraAutomatica() {
+            setTimeout(() => {
+                document.getElementById('cameraBtn').click();
+            }, 100);
+        }
+    </script>
+    <div class="container" id="generatorContainer" style="display:none;">
+        <main class="main-content" style="position: relative; margin: 32px auto; text-align: center; background: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.22)); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 30, 43, 0.45); width: 90%; max-width: 500px; box-sizing: border-box;">
+            <div class="upload-section">
+                <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
+                    
+                    <div class="upload-area" id="uploadArea">
+                    
+                        <button class="camera-btn" id="cameraBtn" type="button">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            Usar cámara
+                        </button>
+                        
+                        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                        <button class="camera-btn" id="uploadBtn" type="button" style="background: linear-gradient(135deg, #001E2B 0%, #023430 100%); margin-top: 10px;">
+                            <span style="font-size: 1.2rem;">📁</span>
+                            Subir foto
+                        </button>
+
+                        <div class="preview-container" id="previewContainer" style="display: none;">
+                            <img id="imagePreview" alt="Preview">
+                            <button class="remove-btn" id="removeBtn" title="Quitar imagen">
+                                <span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;color:#fff;font-size:1.3rem;font-weight:bold;line-height:1;">×</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 4: la historia, visible solo cuando ya hay foto -->
+                <div class="card story-card" id="storyCard" style="display: none; margin-top: 18px; text-align: left;">
+                    <h3 style="color:#ffffff; font-weight:bold; margin-bottom:6px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Ahora escribe tu historia</h3>
+                    <p style="color:#ffffff; opacity:0.85; font-size:0.95rem; margin-bottom:12px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                        Cuéntanos qué te pasa en el cómic. Entre más detalles des, mejor queda.
+                    </p>
+                    <textarea id="storyInput" maxlength="1200" rows="6" placeholder="Ejemplo: Llego tarde a la oficina y descubro que mi café tiene superpoderes. Vuelo por la ciudad, salvo a un gato de un árbol y llego justo a tiempo a la junta..." style="width:100%; box-sizing:border-box; padding:14px; border:2px solid rgba(255,255,255,0.3); border-radius:14px; font-size:1rem; line-height:1.5; resize:vertical; outline:none; background:rgba(255,255,255,0.92); color:#1f2937;"></textarea>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                        <button type="button" id="storyExampleBtn" style="background:none; border:none; color:#ffffff; text-decoration:underline; cursor:pointer; font-size:0.9rem; padding:0;">Dame una idea</button>
+                        <span id="storyCounter" style="color:#ffffff; font-size:0.85rem; opacity:0.85;">0 / 1200</span>
+                    </div>
+                </div>
+
+                <button class="generate-btn" id="generateBtn" disabled>
+                    <span class="btn-text">Crear mi cómic</span>
+                </button>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <div class="card result-card">
+                    <h2 style="color: #ffffff; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Tu cómic</h2>
+                    <div class="result-image-container">
+                        <img id="resultImage" alt="Cómic generado">
+                    </div>
+                    <div id="qr-container" style="margin: 18px 0; text-align: center;"></div>
+                    <div class="result-actions" style="display: flex; flex-direction: column; gap: 16px; align-items: center; margin-top: 18px;">
+                        <button class="action-btn download-btn" id="downloadBtn" style="width: 200px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Descargar
+                        </button>
+                        <button class="action-btn secondary" id="newBtn" style="width: 200px;">
+                            Crear otra
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="loading-overlay" id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; justify-content: center; align-items: center;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:22px;">
+                <div class="loader"></div>
+                <div id="loadingMsg" style="color:#ffffff; font-size:1.15rem; font-weight:600; text-align:center; max-width:320px; text-shadow:0 2px 6px rgba(0,0,0,0.6);">Preparando tu cómic...</div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+
+       
+    </div>
+
+    <!-- Modal de cámara -->
+<div class="camera-modal" id="cameraModal">
+    <div class="camera-content">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <div id="countdown" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8rem;color:white;font-weight:bold;text-shadow:0 0 20px rgba(0,0,0,0.8);display:none;pointer-events:none;z-index:10001;">3</div>
+        <button id="captureBtn">Capturar foto</button>
+        <button id="closeCameraBtn">Cerrar</button>
+    </div>
+</div>
+
+    <script src="app.js"></script>
+    <script>
+        function reiniciarProceso() {
+            // Oculta las pantallas del generador
+            document.getElementById('generatorContainer').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('cameraModal').style.display = 'none';
+            document.getElementById('storyCard').style.display = 'none';
+
+            // Limpiar campos
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('storyInput').value = '';
+            document.getElementById('storyCounter').textContent = '0 / 1200';
+            document.getElementById('generateBtn').disabled = true;
+
+            const qrContainer = document.getElementById('qr-container');
+            if (qrContainer) qrContainer.innerHTML = '';
+
+            // Resetear variables globales
+            window.sexoSeleccionado = null;
+            window.estiloSeleccionado = null;
+
+            // Volver al paso 1
+            document.getElementById('sexo-section').style.display = 'block';
+            document.getElementById('style-section').style.display = 'none';
+            document.getElementById('btn-style-next').disabled = true;
+            document.getElementById('btn-sexo-next').disabled = true;
+            document.querySelectorAll('.sexo-option').forEach(function(o) {
+                o.style.borderColor = '#e9ecef';
+                o.style.transform = 'none';
+            });
+            document.getElementById('inicioContainer').style.display = 'flex';
+            document.body.style.overflow = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Bloquear el clic derecho en toda la página
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>

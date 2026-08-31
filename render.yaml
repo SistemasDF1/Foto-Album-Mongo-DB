@@ -1,0 +1,24 @@
+# Configuración para desplegar en Render (Blueprint).
+# También puedes crear el servicio a mano en el panel; los valores son los mismos.
+services:
+  - type: web
+    name: generador-comics
+    runtime: node
+    plan: starter          # el plan free duerme tras 15 min y no admite Disk
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+
+    # Disco persistente: sin esto, downloads/ e historias/ se borran en cada deploy
+    disk:
+      name: datos
+      mountPath: /var/data
+      sizeGB: 1
+
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false        # se captura en el panel, no se versiona
+      - key: STORAGE_DIR
+        value: /var/data
+      - key: NODE_VERSION
+        value: 20
