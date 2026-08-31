@@ -1216,3 +1216,21 @@ body {
     .mdb-brand-bar { padding: 10px 20px; }
     .mdb-brand-bar img { height: 40px; }
 }
+
+
+/* El panel del generador se centra en la pantalla, sin pegarse al logo */
+#generatorContainer {
+    display: none;            /* lo activa el JS con flex */
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+#generatorContainer .main-content {
+    margin: 0 auto !important;
+}
+
+/* Deja sitio al logo cuando el panel es alto */
+@media (min-height: 700px) {
+    #generatorContainer { padding-top: 70px !important; }
+}
