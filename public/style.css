@@ -1042,3 +1042,34 @@ body {
     .style-option { padding: 7px !important; }
     .style-option span { font-size: 0.8rem !important; }
 }
+
+
+/* ===== Títulos con el degradado de marca =====
+   Verde Spring -> turquesa -> lima claro, como en mongodb.com.
+   El text-shadow se anula: sobre texto recortado deja un borde sucio. */
+#sexo-section h2,
+#style-section h2,
+#storyCard h3,
+.result-card h2,
+.titulo-degradado {
+    background-image: linear-gradient(100deg, #00EB64 0%, #00D2C8 45%, #B8E986 75%, #E3F79A 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent !important;
+    text-shadow: none !important;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* Si el navegador no soporta recortar el fondo al texto, se ve en verde plano */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+    #sexo-section h2,
+    #style-section h2,
+    #storyCard h3,
+    .result-card h2,
+    .titulo-degradado {
+        color: var(--mdb-spring-green) !important;
+        -webkit-text-fill-color: currentColor;
+    }
+}
