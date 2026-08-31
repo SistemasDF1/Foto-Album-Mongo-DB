@@ -288,6 +288,14 @@ async function generateImage() {
             showToast('El cómic se generó pero la imagen no cargó. Usa el QR o el enlace.', 'error');
         };
         resultImage.src = data.image;
+
+        // El resultado es su propio paso: se retira todo lo anterior para que
+        // no se acumule ni haga falta scroll.
+        if (fotoSection) fotoSection.style.display = 'none';
+        if (btnFotoNext) btnFotoNext.style.display = 'none';
+        storyCard.style.display = 'none';
+        generateBtn.style.display = 'none';
+
         resultSection.style.display = 'block';
 
         // El resultado necesita más ancho que el wizard para que el cómic y el

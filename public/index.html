@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.ico?v=2" sizes="any">
     <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=25">
+    <link rel="stylesheet" href="style.css?v=26">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -895,7 +895,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=25"></script>
+    <script src="app.js?v=26"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
@@ -906,6 +906,7 @@
             document.getElementById('generateBtn').style.display = 'none';
             document.getElementById('fotoSection').style.display = 'block';
             document.getElementById('btnFotoNext').style.display = 'none';
+            document.getElementById('storyInput').value = '';
             restaurarAnchoPanel();
 
             // Limpiar campos
