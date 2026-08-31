@@ -14,15 +14,13 @@ historias/
 npm-debug.log*
 
 # ---------------------------------------------------------------------------
-# Fuentes de marca: NO se versionan.
-# Euclid Circular A es una fuente comercial y MongoDB Value Serif es propietaria,
-# así que no pueden redistribuirse en un repositorio público.
-# Para desplegar, cópialas a public/fonts/ — ver la sección "Fuentes" del README.
+# Fuentes de marca.
+# public/fonts/ SÍ se versiona: la app las necesita para la interfaz y para
+# rotular los globos del cómic en Render. Solo es admisible con el repositorio
+# en privado: Euclid Circular A es comercial y MongoDB Value Serif propietaria.
 # ---------------------------------------------------------------------------
-public/fonts/
 mongo db-fonts/
 *.otf
-*.ttf
 
 # Material de marca original (Brand Book, ESG Report, paquetes completos)
 MongoDB-selected-assets/

@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v6';
+const MOTOR = 'vinetas-v7';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -661,6 +661,7 @@ app.get('/c/:id', (req, res) => {
     if (!rutaComic(id)) {
       return res.status(404).send(`<!doctype html><html lang="es"><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" href="/favicon.ico" sizes="any">
         <title>Cómic no encontrado</title></head>
         <body style="margin:0;min-height:100vh;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;background:#001E2B;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;">
           <img src="/img/mongodb/MongoDB_White.svg" alt="MongoDB" style="height:26px;">
@@ -675,6 +676,8 @@ app.get('/c/:id', (req, res) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
   <title>Tu cómic</title>
   <style>
     /* Tipografía de marca, servida desde public/fonts */
