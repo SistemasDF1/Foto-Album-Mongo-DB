@@ -479,14 +479,41 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
   }
 });
 
-// Endpoint de salud
-app.get('/api/health', (req, res) => {
+// Endpoint de salud. Sirve para diagnosticar un despliegue sin entrar al log:
+// dice si hay API key, si la rotulación tiene fuentes y si el almacenamiento
+// sobrevive a un reinicio.
+app.get('/api/health', async (req, res) => {
+  const fuentes = await comprobarFuentes();
+
+  let historiasGuardadas = 0;
+  try {
+    const indice = path.join(HISTORIAS_DIR, 'index.jsonl');
+    if (fs.existsSync(indice)) {
+      historiasGuardadas = fs.readFileSync(indice, 'utf8').split('\n').filter(Boolean).length;
+    }
+  } catch { /* si no se puede leer, se reporta 0 */ }
+
   res.json({
     status: 'OK',
     message: 'Generador de Cómics API está funcionando',
     motor: MOTOR,
     vinetas: NUM_VINETAS,
-    hasApiKey: !!process.env.GOOGLE_API_KEY
+    hasApiKey: !!process.env.GOOGLE_API_KEY,
+    fuentes: {
+      ok: fuentes.ok,
+      detalle: fuentes.ok
+        ? 'la rotulación tiene fuentes disponibles'
+        : 'SIN FUENTES: los globos saldrían vacíos'
+    },
+    almacenamiento: {
+      dir: STORAGE_DIR,
+      persistente: !!process.env.STORAGE_DIR,
+      historiasGuardadas,
+      detalle: process.env.STORAGE_DIR
+        ? 'STORAGE_DIR configurado'
+        : 'SIN STORAGE_DIR: en Render las historias se borran en cada deploy'
+    },
+    urlPublica: PUBLIC_URL || null
   });
 });
 
