@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v10';
+const MOTOR = 'vinetas-v11';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -738,8 +738,9 @@ app.get('/c/:id', (req, res) => {
     .logo { height: 26px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.45)); }
 
     h1 {
-      font-family: 'MongoDB Value Serif', Georgia, serif;
-      font-size: 1.5rem; margin: 0; text-align: center; font-weight: 400;
+      font-family: 'Euclid Circular A', system-ui, -apple-system, sans-serif;
+      font-size: 1.7rem; margin: 0; text-align: center; font-weight: 800;
+      letter-spacing: -0.02em;
       background-image: linear-gradient(100deg, #00EB64 0%, #00D2C8 45%, #B8E986 75%, #E3F79A 100%);
       -webkit-background-clip: text;
       background-clip: text;

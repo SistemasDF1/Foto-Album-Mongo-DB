@@ -1077,8 +1077,12 @@ body {
     -webkit-text-fill-color: transparent;
     color: transparent !important;
     text-shadow: none !important;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+
+    /* Sans pesada, no la serif: el degradado necesita trazo grueso para leerse.
+       Georgia (el respaldo de la serif) tiene una negrita demasiado fina. */
+    font-family: 'Euclid Circular A', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
 }
 
 /* Si el navegador no soporta recortar el fondo al texto, se ve en verde plano */
@@ -1091,4 +1095,26 @@ body {
         color: var(--mdb-spring-green) !important;
         -webkit-text-fill-color: currentColor;
     }
+}
+
+
+/* Los títulos se encogen en pantallas bajas para no forzar scroll */
+@media (max-height: 820px) {
+    #sexo-section h2,
+    #style-section h2,
+    .result-card h2 { font-size: 2rem !important; }
+    #storyCard h3    { font-size: 1.35rem !important; }
+}
+
+@media (max-height: 700px) {
+    #sexo-section h2,
+    #style-section h2,
+    .result-card h2 { font-size: 1.7rem !important; }
+    #storyCard h3    { font-size: 1.2rem !important; }
+}
+
+@media (max-width: 700px) {
+    #sexo-section h2,
+    #style-section h2,
+    .result-card h2 { font-size: 1.9rem !important; }
 }
