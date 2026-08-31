@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v3';
+const MOTOR = 'vinetas-v4';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -631,8 +631,9 @@ app.get('/c/:id', (req, res) => {
       return res.status(404).send(`<!doctype html><html lang="es"><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Cómic no encontrado</title></head>
-        <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#001E2B;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;">
-          <div><h1 style="color:#00ED64;">Cómic no encontrado</h1>
+        <body style="margin:0;min-height:100vh;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;background:#001E2B;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;">
+          <img src="/img/mongodb/MongoDB_White.svg" alt="MongoDB" style="height:26px;">
+          <div><h1 style="color:#00ED64;font-size:1.3rem;">Cómic no encontrado</h1>
           <p style="opacity:.8">Puede que este enlace haya caducado.</p></div>
         </body></html>`);
     }
@@ -647,26 +648,75 @@ app.get('/c/:id', (req, res) => {
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
+
     body {
-      margin: 0; min-height: 100vh; background: #001E2B; color: #fff;
+      margin: 0;
+      min-height: 100vh;
+      color: #fff;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 20px 16px 40px; gap: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 22px 16px 44px;
+      gap: 22px;
+      position: relative;
+      overflow-x: hidden;
     }
-    h1 { font-size: 1.3rem; margin: 0; text-align: center; }
-    img { width: 100%; max-width: 760px; height: auto; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+
+    /* Mismo fondo que la aplicación: base oscura, retícula y resplandor verde */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: -2;
+      background-color: #001E2B;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
+      background-size: 88px 88px, 88px 88px;
+      background-position: center top;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 46% at 50% -4%, rgba(0,237,100,0.20), transparent 62%),
+        radial-gradient(ellipse 52% 60% at 2% 34%, rgba(0,237,100,0.13), transparent 66%),
+        radial-gradient(ellipse 52% 60% at 98% 34%, rgba(0,237,100,0.11), transparent 66%),
+        radial-gradient(ellipse 90% 70% at 50% 52%, transparent 42%, rgba(0,10,16,0.72) 100%);
+    }
+
+    .logo { height: 26px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.45)); }
+
+    h1 {
+      font-size: 1.25rem; margin: 0; text-align: center; font-weight: 700;
+      text-shadow: 0 2px 6px rgba(0,0,0,.6);
+    }
+
+    .comic {
+      width: 100%; max-width: 760px; height: auto;
+      border-radius: 14px;
+      box-shadow: 0 12px 44px rgba(0,0,0,.55);
+    }
+
     .acciones { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; }
+
     a.boton {
-      display: block; text-align: center; text-decoration: none; padding: 16px 24px;
-      border-radius: 28px; font-size: 1.05rem; font-weight: 700;
+      display: block; text-align: center; text-decoration: none;
+      padding: 16px 24px; border-radius: 28px;
+      font-size: 1.05rem; font-weight: 700;
       background: linear-gradient(135deg, #00ED64, #00684A); color: #fff;
+      box-shadow: 0 6px 20px rgba(0,237,100,.28);
     }
-    p.ayuda { opacity: .7; font-size: .85rem; text-align: center; margin: 0; max-width: 360px; }
+
+    p.ayuda {
+      opacity: .72; font-size: .85rem; text-align: center;
+      margin: 0; max-width: 360px; line-height: 1.5;
+    }
   </style>
 </head>
 <body>
-  <h1>💥 Tu cómic está listo</h1>
-  <img src="/c/${id}/imagen.jpg" alt="Tu cómic">
+  <img class="logo" src="/img/mongodb/MongoDB_White.svg" alt="MongoDB">
+  <h1>Tu cómic está listo</h1>
+  <img class="comic" src="/c/${id}/imagen.jpg" alt="Tu cómic">
   <div class="acciones">
     <a class="boton" href="/c/${id}/imagen.jpg" download="${id}.jpg">Descargar imagen</a>
   </div>
