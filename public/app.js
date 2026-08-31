@@ -178,15 +178,23 @@ async function generateImage() {
         const panel = document.querySelector('#generatorContainer .main-content');
         if (panel) panel.style.maxWidth = '1000px';
 
-        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        showToast('¡Tu cómic está listo! 🎉', 'success');
-
-        lanzarConfeti();
-
+        // El QR va PRIMERO: es lo que la persona se lleva. Si se pinta después
+        // del confeti, cualquier fallo de esa librería (viene de un CDN externo
+        // que muchas redes bloquean) se lleva el QR por delante.
         if (data.qrCode) {
             showQRCode(data.qrCode, data.downloadUrl);
         } else {
             console.warn('El servidor no devolvió código QR');
+        }
+
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showToast('¡Tu cómic está listo! 🎉', 'success');
+
+        // Decorativo: nunca debe romper el flujo
+        try {
+            lanzarConfeti();
+        } catch (error) {
+            console.warn('No se pudo lanzar el confeti:', error);
         }
     } catch (error) {
         console.error('Error:', error);
@@ -213,20 +221,23 @@ function detenerMensajesCarga() {
 }
 
 function lanzarConfeti() {
-    if (!window.confetti) return;
+    if (typeof window.confetti !== 'function') return;
 
-    const scalar = 3;
-    const globo = confetti.shapeFromText({ text: '💥', scalar });
+    // shapeFromText no existe en versiones antiguas de la librería
+    if (typeof window.confetti.shapeFromText === 'function') {
+        const scalar = 3;
+        const globo = window.confetti.shapeFromText({ text: '💥', scalar });
 
-    window.confetti({
-        particleCount: 25,
-        spread: 100,
-        origin: { y: 0.6 },
-        shapes: [globo],
-        scalar: scalar,
-        gravity: 0.7,
-        ticks: 300
-    });
+        window.confetti({
+            particleCount: 25,
+            spread: 100,
+            origin: { y: 0.6 },
+            shapes: [globo],
+            scalar: scalar,
+            gravity: 0.7,
+            ticks: 300
+        });
+    }
 
     window.confetti({
         particleCount: 100,
@@ -331,7 +342,10 @@ async function checkApiHealth() {
 // Mostrar QR de descarga
 function showQRCode(qrCodeDataUrl, urlDescarga) {
     const qrContainer = document.getElementById('qr-container');
-    if (!qrContainer) return;
+    if (!qrContainer) {
+        console.error('No existe #qr-container: no se puede mostrar el QR');
+        return;
+    }
 
     qrContainer.innerHTML = '';
 

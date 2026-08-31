@@ -205,12 +205,57 @@ function cartuchoNarracion(texto, { x, y, maxAncho }) {
   };
 }
 
-// Onomatopeya: letras grandes con contorno.
-function onomatopeya(texto, { cx, cy, rotacion = -8 }) {
-  const limpio = escaparXml(texto.toUpperCase().slice(0, 12));
-  const fontSize = 92;
+// Paletas del estallido. Se elige una según el sonido, para que un golpe y un
+// maullido no se vean igual.
+const PALETAS_SONIDO = [
+  { test: /BOOM|BANG|CRASH|POW|PUM|BUM|CRACK|PLAF|ZAS|SMASH/, relleno: '#E8112D', borde: '#FFE212', texto: '#FFFFFF' },
+  { test: /ZUM|SWOOSH|WHOOSH|FIU|SWISH|VROOM|ZZZ|SHH/,        relleno: '#0A66C2', borde: '#FFFFFF', texto: '#FFFFFF' },
+  { test: /GUAU|MIAU|ÑAM|NAM|JAJA|AAAH|UFF|SNIF/,             relleno: '#FF8A00', borde: '#FFFFFF', texto: '#FFFFFF' }
+];
+const PALETA_SONIDO_DEFECTO = { relleno: '#FFE212', borde: '#111111', texto: '#111111' };
+
+function paletaSonido(texto) {
+  const limpio = texto.toUpperCase();
+  return PALETAS_SONIDO.find(p => p.test.test(limpio)) || PALETA_SONIDO_DEFECTO;
+}
+
+// Polígono en forma de estrella irregular: el estallido clásico del cómic.
+// Las puntas se alternan largas y cortas, con una variación fija por índice para
+// que no parezca una estrella de reloj.
+function estallido(rx, ry, puntas = 14) {
+  const coords = [];
+  for (let i = 0; i < puntas * 2; i++) {
+    const angulo = (Math.PI * i) / puntas;
+    const esPunta = i % 2 === 0;
+    // Variación determinista: mismo sonido, mismo estallido
+    const variacion = 1 + (i % 3) * 0.07 - (i % 5) * 0.04;
+    const factor = (esPunta ? 1 : 0.62) * variacion;
+    coords.push(`${(Math.cos(angulo) * rx * factor).toFixed(1)},${(Math.sin(angulo) * ry * factor).toFixed(1)}`);
+  }
+  return coords.join(' ');
+}
+
+// Onomatopeya con estallido de fondo, letras inclinadas y sombra.
+function onomatopeya(texto, { cx, cy, rotacion = -12 }) {
+  const crudo = texto.toUpperCase().slice(0, 12);
+  const limpio = escaparXml(crudo);
+  const paleta = paletaSonido(crudo);
+
+  const fontSize = 96;
+  const anchoTexto = crudo.length * fontSize * factorAncho();
+
+  // El estallido tiene que envolver al texto con aire alrededor
+  const rx = anchoTexto / 2 + fontSize * 0.85;
+  const ry = fontSize * 1.15;
+
   return `<g transform="translate(${cx} ${cy}) rotate(${rotacion})">
-    <text x="0" y="0" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}" fill="#FFE212" stroke="#111111" stroke-width="14" stroke-linejoin="round" paint-order="stroke">${limpio}</text>
+    <polygon points="${estallido(rx, ry)}" fill="${paleta.relleno}" stroke="#111111" stroke-width="10" stroke-linejoin="round" opacity="0.95"/>
+    <polygon points="${estallido(rx * 0.88, ry * 0.86)}" fill="none" stroke="${paleta.borde}" stroke-width="6" stroke-linejoin="round" opacity="0.9"/>
+    <g transform="skewX(-10)">
+      <text x="6" y="${fontSize * 0.36 + 8}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}" fill="#111111" opacity="0.45">${limpio}</text>
+      <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
+            fill="${paleta.texto}" stroke="#111111" stroke-width="18" stroke-linejoin="round" paint-order="stroke">${limpio}</text>
+    </g>
   </g>`;
 }
 
@@ -290,13 +335,17 @@ async function capaTexto(escena, arte) {
   }
 
   if (sonido) {
-    const ancho = sonido.length * 60;
-    const alto = 120;
+    // Tamaño aproximado del estallido, para buscarle un hueco despejado
+    const ancho = sonido.length * 96 * factorAncho() + 190;
+    const alto = 230;
+    const media = ancho / 2 + 20;
+    const izq = Math.max(media, VINETA_W * 0.28);
+    const der = Math.min(VINETA_W - media, VINETA_W * 0.72);
     const candidatos = [
-      { cx: VINETA_W * 0.27, cy: VINETA_H * 0.80 },
-      { cx: VINETA_W * 0.73, cy: VINETA_H * 0.80 },
-      { cx: VINETA_W * 0.27, cy: VINETA_H * 0.55 },
-      { cx: VINETA_W * 0.73, cy: VINETA_H * 0.55 }
+      { cx: izq, cy: VINETA_H * 0.78 },
+      { cx: der, cy: VINETA_H * 0.78 },
+      { cx: izq, cy: VINETA_H * 0.54 },
+      { cx: der, cy: VINETA_H * 0.54 }
     ];
     const pos = await mejorPosicion(arte, ancho, alto, candidatos);
     partes.push(onomatopeya(sonido, pos));
