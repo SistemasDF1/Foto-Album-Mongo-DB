@@ -73,11 +73,12 @@
 
 :root {
     /* Paleta oficial MongoDB */
-    --mdb-spring-green: #00ED64;
+    --mdb-spring-green: #00EB64;
     --mdb-forest-green: #00684A;
     --mdb-evergreen: #023430;
     --mdb-slate-blue: #001E2B;
     --mdb-mist: #E3FCF7;
+    --mdb-lavanda: #F9EBFF;
     --mdb-white: #FFFFFF;
 
     --primary: var(--mdb-forest-green);
@@ -94,8 +95,8 @@
     --shadow: rgba(0, 30, 43, 0.15);
 
     /* Superficies reutilizadas por las tarjetas del wizard */
-    --mdb-card-bg: linear-gradient(135deg, rgba(0, 237, 100, 0.12), rgba(0, 104, 74, 0.20));
-    --mdb-btn: linear-gradient(135deg, var(--mdb-spring-green), var(--mdb-forest-green));
+    --mdb-card-bg: linear-gradient(135deg, rgba(0, 235, 100, 0.12), rgba(0, 104, 74, 0.20));
+    --mdb-btn: var(--mdb-spring-green);
 }
 
 body {
@@ -138,9 +139,9 @@ body::after {
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(ellipse 70% 46% at 50% -4%, rgba(0, 237, 100, 0.20), transparent 62%),
-        radial-gradient(ellipse 52% 60% at 2% 34%, rgba(0, 237, 100, 0.13), transparent 66%),
-        radial-gradient(ellipse 52% 60% at 98% 34%, rgba(0, 237, 100, 0.11), transparent 66%),
+        radial-gradient(ellipse 70% 46% at 50% -4%, rgba(0, 235, 100, 0.20), transparent 62%),
+        radial-gradient(ellipse 52% 60% at 2% 34%, rgba(0, 235, 100, 0.13), transparent 66%),
+        radial-gradient(ellipse 52% 60% at 98% 34%, rgba(0, 235, 100, 0.11), transparent 66%),
         radial-gradient(ellipse 90% 70% at 50% 52%, transparent 42%, rgba(0, 10, 16, 0.72) 100%);
 }
 
@@ -298,7 +299,7 @@ body::after {
 #storyInput:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(0, 237, 100, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 235, 100, 0.25);
 }
 
 .prompt-examples {
@@ -524,7 +525,7 @@ body::after {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 237, 100, 0.35), transparent 70%);
+    background: radial-gradient(circle, rgba(0, 235, 100, 0.35), transparent 70%);
     animation: pulsoHalo 1.6s ease-in-out infinite;
 }
 
@@ -537,7 +538,7 @@ body::after {
     background-position: center;
     background-size: contain;
     animation: latidoHoja 1.6s ease-in-out infinite;
-    filter: drop-shadow(0 4px 14px rgba(0, 237, 100, 0.45));
+    filter: drop-shadow(0 4px 14px rgba(0, 235, 100, 0.45));
 }
 
 @keyframes pulsoHalo {
@@ -851,4 +852,102 @@ h1, h2, .brand-title {
 /* Los formularios no heredan la tipografía por defecto en ningún navegador */
 button, input, textarea, select {
     font-family: inherit;
+}
+
+
+/* ===== Botones con los colores oficiales de la paleta =====
+   Plano, sin degradados: Spring Green sobre Slate Blue es la combinación
+   principal de la guía de marca. */
+.btn-mdb,
+.camera-btn,
+.generate-btn,
+.action-btn.download-btn {
+    background: var(--mdb-spring-green) !important;
+    color: var(--mdb-slate-blue) !important;
+    border: none !important;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(0, 235, 100, 0.28) !important;
+}
+
+.btn-mdb:hover:not(:disabled),
+.camera-btn:hover:not(:disabled),
+.generate-btn:hover:not(:disabled),
+.action-btn.download-btn:hover:not(:disabled) {
+    background: var(--mdb-forest-green) !important;
+    color: var(--mdb-white) !important;
+}
+
+/* Secundario: fondo claro de la paleta */
+.action-btn.secondary,
+.btn-mdb-secundario {
+    background: var(--mdb-mist) !important;
+    color: var(--mdb-evergreen) !important;
+    border: none !important;
+    font-weight: 700;
+}
+
+.action-btn.secondary:hover,
+.btn-mdb-secundario:hover {
+    background: var(--mdb-white) !important;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
+
+/* ===== Botón de pantalla completa ===== */
+.btn-pantalla {
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 6000;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    cursor: pointer;
+    background: rgba(0, 30, 43, 0.55);
+    border: 1px solid rgba(0, 235, 100, 0.45);
+    color: var(--mdb-spring-green);
+    backdrop-filter: blur(8px);
+    transition: all 0.25s ease;
+}
+
+.btn-pantalla:hover {
+    background: var(--mdb-spring-green);
+    color: var(--mdb-slate-blue);
+}
+
+.btn-pantalla svg { width: 22px; height: 22px; }
+
+/* ===== Todo cabe en una pantalla, sin scroll ===== */
+html, body { height: 100%; }
+
+body {
+    overflow: hidden;   /* el contenido se ajusta; no debe hacer falta scroll */
+}
+
+.container {
+    max-height: 100vh;
+}
+
+/* El preview de la foto no puede empujar el resto fuera de la pantalla */
+.preview-container img,
+#imagePreview {
+    max-height: 26vh !important;
+    width: auto !important;
+    object-fit: contain;
+}
+
+#storyInput {
+    max-height: 18vh;
+}
+
+@media (max-height: 700px) {
+    #imagePreview { max-height: 20vh !important; }
+    #storyInput { max-height: 14vh; }
 }

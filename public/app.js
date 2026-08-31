@@ -21,6 +21,7 @@ const storyCounter = document.getElementById('storyCounter');
 const storyHint = document.getElementById('storyHint');
 const storyExampleBtn = document.getElementById('storyExampleBtn');
 const loadingMsg = document.getElementById('loadingMsg');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 const HISTORIA_MIN = 20;
 const HISTORIA_MAX = 1200;
@@ -53,6 +54,35 @@ newBtn.addEventListener('click', () => reiniciarProceso());
 cameraBtn.addEventListener('click', openCamera);
 captureBtn.addEventListener('click', startCountdown);
 closeCameraBtn.addEventListener('click', closeCamera);
+
+// Pantalla completa: en el evento la app va proyectada o en una tablet, y la
+// barra del navegador roba altura.
+if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', alternarPantallaCompleta);
+    document.addEventListener('fullscreenchange', pintarIconoPantalla);
+}
+
+function alternarPantallaCompleta() {
+    const doc = document.documentElement;
+
+    if (!document.fullscreenElement) {
+        const pedir = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.msRequestFullscreen;
+        if (pedir) pedir.call(doc).catch(err => console.warn('Pantalla completa no disponible:', err));
+    } else {
+        const salir = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        if (salir) salir.call(document).catch(() => {});
+    }
+}
+
+function pintarIconoPantalla() {
+    const icono = document.getElementById('iconoExpandir');
+    if (!icono) return;
+
+    icono.setAttribute('d', document.fullscreenElement
+        ? 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3'
+        : 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3');
+    fullscreenBtn.title = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa';
+}
 
 storyInput.addEventListener('input', () => {
     storyCounter.textContent = `${storyInput.value.length} / ${HISTORIA_MAX}`;

@@ -324,13 +324,34 @@ async function detalleDeZona(arte, left, top, width, height) {
   }
 }
 
-// Elige, entre varias posiciones candidatas, la que menos detalle tapa.
-async function mejorPosicion(arte, ancho, alto, candidatos) {
+// Cuánto se pisan dos rectángulos, en píxeles cuadrados.
+function areaSolapada(a, b) {
+  const ancho = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const alto = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return ancho > 0 && alto > 0 ? ancho * alto : 0;
+}
+
+// Elige la posición que menos detalle tapa Y que no se pise con las cajas de
+// texto ya colocadas. El solapamiento pesa mucho más que el detalle del dibujo:
+// antes se calculaban posiciones "que no deberían" chocar, y bastaba un cartucho
+// de tres líneas para que globo y narración acabaran pegados.
+async function mejorPosicion(arte, ancho, alto, candidatos, ocupados = []) {
   let mejor = candidatos[0];
   let mejorPuntaje = Number.POSITIVE_INFINITY;
 
   for (const c of candidatos) {
-    const puntaje = await detalleDeZona(arte, c.cx - ancho / 2, c.cy - alto / 2, ancho, alto);
+    const caja = { x: c.cx - ancho / 2, y: c.cy - alto / 2, w: ancho, h: alto };
+
+    // Margen de respiro alrededor de las cajas ya colocadas
+    const solape = ocupados.reduce((total, o) => total + areaSolapada(caja, {
+      x: o.x - 18, y: o.y - 18, w: o.w + 36, h: o.h + 36
+    }), 0);
+
+    const detalle = await detalleDeZona(arte, caja.x, caja.y, ancho, alto);
+
+    // Un solo píxel de solape ya penaliza más que cualquier fondo cargado
+    const puntaje = detalle + (solape / (ancho * alto)) * 10000;
+
     if (puntaje < mejorPuntaje) {
       mejorPuntaje = puntaje;
       mejor = c;
@@ -343,6 +364,7 @@ async function mejorPosicion(arte, ancho, alto, candidatos) {
 // mas despejadas del dibujo para no taparle la cara al protagonista.
 async function capaTexto(escena, arte) {
   const partes = [];
+  const ocupados = [];   // cajas ya colocadas, para que nada se pise
   const dialogo = (escena.dialogo || '').trim();
   const narracion = (escena.narracion || '').trim();
   const sonido = (escena.onomatopeya || '').trim();
@@ -355,51 +377,63 @@ async function capaTexto(escena, arte) {
     const c = cartuchoNarracion(narracion, { x: margen, y: margen, maxAncho: VINETA_W * 0.6 });
     cartuchoAlto = c.alto;
     partes.push(c.svg);
+    ocupados.push({ x: margen, y: margen, w: c.ancho, h: c.alto });
   }
 
   if (dialogo) {
     const medida = medirGlobo(dialogo);
     const minX = medida.rx + margen;
     const maxX = VINETA_W - medida.rx - margen;
-    // El globo arranca bien por debajo del cartucho: con poca separación las dos
-    // cajas se leen como un bloque amontonado.
+
+    // El globo arranca bien por debajo del cartucho, y si aun asi no hay sitio
+    // arriba se le ofrecen posiciones mas abajo.
     const SEPARACION = 46;
     const techo = margen + (cartuchoAlto ? cartuchoAlto + SEPARACION : 0);
     const filaAlta = techo + medida.ry;
 
-    // Si el cartucho ya ocupa la parte alta, se le ofrecen al globo posiciones
-    // más abajo en vez de apretarlo contra él.
     const filas = cartuchoAlto
-      ? [filaAlta, filaAlta + medida.ry * 1.1, VINETA_H * 0.45]
-      : [filaAlta, filaAlta + medida.ry * 0.9];
+      ? [filaAlta, filaAlta + medida.ry * 1.1, VINETA_H * 0.45, VINETA_H * 0.62]
+      : [filaAlta, filaAlta + medida.ry * 0.9, VINETA_H * 0.45];
+
     const columnas = [minX, VINETA_W / 2, maxX].filter(x => x >= minX - 1 && x <= maxX + 1);
 
     const candidatos = [];
     for (const cy of filas) {
       for (const cx of columnas) {
+        // Que la cola del globo no se salga por abajo
+        if (cy + medida.ry + 70 > VINETA_H) continue;
         candidatos.push({ cx, cy });
       }
     }
     if (!candidatos.length) candidatos.push({ cx: VINETA_W / 2, cy: filaAlta });
 
-    const pos = await mejorPosicion(arte, medida.ancho, medida.alto, candidatos);
+    const pos = await mejorPosicion(arte, medida.ancho, medida.alto, candidatos, ocupados);
     partes.push(globoDialogo(dialogo, pos));
+    ocupados.push({
+      x: pos.cx - medida.rx,
+      y: pos.cy - medida.ry,
+      w: medida.ancho,
+      h: medida.alto + 70   // incluye la cola
+    });
   }
 
   if (sonido) {
     // Tamaño aproximado del estallido, para buscarle un hueco despejado
     const ancho = sonido.length * 104 * factorAncho() + 230;
     const alto = 300;
+
     const media = ancho / 2 + 20;
     const izq = Math.max(media, VINETA_W * 0.28);
     const der = Math.min(VINETA_W - media, VINETA_W * 0.72);
     const candidatos = [
       { cx: izq, cy: VINETA_H * 0.78 },
       { cx: der, cy: VINETA_H * 0.78 },
-      { cx: izq, cy: VINETA_H * 0.54 },
-      { cx: der, cy: VINETA_H * 0.54 }
+      { cx: izq, cy: VINETA_H * 0.55 },
+      { cx: der, cy: VINETA_H * 0.55 },
+      { cx: VINETA_W / 2, cy: VINETA_H * 0.86 }
     ];
-    const pos = await mejorPosicion(arte, ancho, alto, candidatos);
+
+    const pos = await mejorPosicion(arte, ancho, alto, candidatos, ocupados);
     partes.push(onomatopeya(sonido, pos));
   }
 
