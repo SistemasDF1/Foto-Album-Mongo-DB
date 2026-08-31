@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MongoDB · Crea tu cómic con IA</title>
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -892,19 +892,23 @@
                     <div class="result-image-container">
                         <img id="resultImage" alt="Cómic generado">
                     </div>
-                    <div id="qr-container" style="margin: 18px 0; text-align: center;"></div>
-                    <div class="result-actions" style="display: flex; flex-direction: column; gap: 16px; align-items: center; margin-top: 18px;">
-                        <button class="action-btn download-btn" id="downloadBtn" style="width: 200px;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Descargar
-                        </button>
-                        <button class="action-btn secondary" id="newBtn" style="width: 200px;">
-                            Crear otra
-                        </button>
+                    <div class="result-side">
+                        <div class="result-actions">
+                            <button class="action-btn download-btn" id="downloadBtn" style="width: 220px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Descargar imagen
+                            </button>
+                            <button class="action-btn secondary" id="newBtn" style="width: 220px;">
+                                Crear otro
+                            </button>
+                        </div>
+
+                        <!-- El QR va justo debajo del botón de descarga -->
+                        <div id="qr-container"></div>
                     </div>
                 </div>
             </div>
@@ -932,7 +936,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=8"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador

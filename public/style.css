@@ -409,14 +409,20 @@ body::after {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-/* Columna derecha: QR y botones */
-#qr-container {
+/* Columna lateral: primero los botones, y debajo el QR */
+.result-side {
     flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+#qr-container {
     margin: 0 !important;
 }
 
 .result-actions {
-    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -428,13 +434,8 @@ body::after {
         flex-direction: column;
         align-items: center;
     }
-    /* En pantalla estrecha el QR sube por encima del cómic: es lo que la
-       persona necesita ver primero, y si queda debajo hay que buscarlo. */
-    #qr-container {
-        order: -1;
-    }
     .result-image-container img {
-        max-height: 46vh;
+        max-height: 40vh;
     }
 }
 

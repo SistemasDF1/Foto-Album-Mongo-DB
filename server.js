@@ -84,6 +84,10 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const HISTORIA_MIN = 20;
 const HISTORIA_MAX = 1200;
 
+// Cuántas viñetas pueden llevar onomatopeya. Si salen en todas, la página se
+// satura y el recurso pierde fuerza.
+const MAX_ONOMATOPEYAS = Math.max(1, Math.floor(NUM_VINETAS / 2));
+
 // Estilos de dibujo disponibles. El id es lo que se manda al modelo.
 const ESTILOS = {
   manga: 'manga japonés en blanco y negro, tramas de screentone, líneas dinámicas',
@@ -172,11 +176,13 @@ NO describas la cara ni el peinado aquí: eso va en "apariencia".
 - "narracion": texto de narrador, MÁXIMO 8 palabras. Cadena vacía si no hace falta.
   Úsalo en la primera viñeta y en los saltos de tiempo o de lugar.
 - "onomatopeya": un solo sonido corto en mayúsculas (¡CRASH!, ¡BOOM!, ¡PUM!).
-  Cadena vacía si la escena no lo pide.
+  Úsala SOLO en las viñetas con acción o sonido fuerte de verdad.
+  Como MÁXIMO en ${MAX_ONOMATOPEYAS} de las ${NUM_VINETAS} viñetas; en el resto, cadena vacía.
 
 Reglas:
 - Todo el texto en español correcto, con acentos.
 - Que no todas las viñetas lleven diálogo, narración y onomatopeya a la vez: alterna.
+- Una viñeta tranquila no necesita onomatopeya: déjala vacía.
 - Varía los encuadres entre viñetas.
 - La última viñeta debe cerrar la historia.`;
 
@@ -191,6 +197,18 @@ Reglas:
   while (escenas.length < NUM_VINETAS) {
     escenas.push({ accion: historia, dialogo: '', narracion: '', onomatopeya: '' });
   }
+
+  // El modelo tiende a poner onomatopeya en todas las viñetas aunque se le pida
+  // lo contrario, así que el límite se aplica aquí. Se conservan las de las
+  // viñetas más "sonoras": primero las que no llevan narración.
+  const conSonido = escenas
+    .map((e, i) => ({ i, tieneNarracion: !!(e.narracion || '').trim() }))
+    .filter(({ i }) => (escenas[i].onomatopeya || '').trim())
+    .sort((a, b) => Number(a.tieneNarracion) - Number(b.tieneNarracion));
+
+  conSonido.slice(MAX_ONOMATOPEYAS).forEach(({ i }) => {
+    escenas[i].onomatopeya = '';
+  });
 
   return {
     apariencia: (datos.apariencia || '').trim(),

@@ -205,56 +205,101 @@ function cartuchoNarracion(texto, { x, y, maxAncho }) {
   };
 }
 
-// Paletas del estallido. Se elige una según el sonido, para que un golpe y un
-// maullido no se vean igual.
+// Paleta del estallido segun el tipo de sonido. Un golpe y un maullido no
+// deben verse igual.
 const PALETAS_SONIDO = [
-  { test: /BOOM|BANG|CRASH|POW|PUM|BUM|CRACK|PLAF|ZAS|SMASH/, relleno: '#E8112D', borde: '#FFE212', texto: '#FFFFFF' },
-  { test: /ZUM|SWOOSH|WHOOSH|FIU|SWISH|VROOM|ZZZ|SHH/,        relleno: '#0A66C2', borde: '#FFFFFF', texto: '#FFFFFF' },
-  { test: /GUAU|MIAU|ÑAM|NAM|JAJA|AAAH|UFF|SNIF/,             relleno: '#FF8A00', borde: '#FFFFFF', texto: '#FFFFFF' }
+  { test: /BOOM|BANG|CRASH|POW|PUM|BUM|CRACK|PLAF|ZAS|SMASH|WHAM/, estallido: '#F2B233', semitono: '#E8112D', texto: '#E8112D' },
+  { test: /ZUM|SWOOSH|WHOOSH|FIU|SWISH|VROOM|ZZZ|SHH|CLIC|CLICK/,  estallido: '#F2B233', semitono: '#0A66C2', texto: '#0A66C2' },
+  { test: /GUAU|MIAU|ÑAM|NAM|JAJA|AAAH|UFF|SNIF|MUA/,              estallido: '#F2B233', semitono: '#00A34A', texto: '#00A34A' }
 ];
-const PALETA_SONIDO_DEFECTO = { relleno: '#FFE212', borde: '#111111', texto: '#111111' };
+const PALETA_SONIDO_DEFECTO = { estallido: '#F2B233', semitono: '#E8112D', texto: '#E8112D' };
 
 function paletaSonido(texto) {
   const limpio = texto.toUpperCase();
   return PALETAS_SONIDO.find(p => p.test.test(limpio)) || PALETA_SONIDO_DEFECTO;
 }
 
-// Polígono en forma de estrella irregular: el estallido clásico del cómic.
-// Las puntas se alternan largas y cortas, con una variación fija por índice para
-// que no parezca una estrella de reloj.
+// Poligono en forma de estrella irregular: el estallido clasico del comic.
 function estallido(rx, ry, puntas = 14) {
   const coords = [];
   for (let i = 0; i < puntas * 2; i++) {
     const angulo = (Math.PI * i) / puntas;
     const esPunta = i % 2 === 0;
-    // Variación determinista: mismo sonido, mismo estallido
-    const variacion = 1 + (i % 3) * 0.07 - (i % 5) * 0.04;
-    const factor = (esPunta ? 1 : 0.62) * variacion;
+    // Variacion determinista: mismo sonido, mismo estallido
+    const variacion = 1 + (i % 3) * 0.08 - (i % 5) * 0.05;
+    const factor = (esPunta ? 1 : 0.6) * variacion;
     coords.push(`${(Math.cos(angulo) * rx * factor).toFixed(1)},${(Math.sin(angulo) * ry * factor).toFixed(1)}`);
   }
   return coords.join(' ');
 }
 
-// Onomatopeya con estallido de fondo, letras inclinadas y sombra.
+// Rayos de velocidad: lineas finas que salen del estallido hacia fuera.
+function rayosVelocidad(rx, ry, cantidad = 18) {
+  const rayos = [];
+  for (let i = 0; i < cantidad; i++) {
+    const angulo = (Math.PI * 2 * i) / cantidad + 0.15;
+    const desde = 1.02 + (i % 3) * 0.04;
+    const hasta = desde + 0.16 + (i % 4) * 0.06;
+    const x1 = (Math.cos(angulo) * rx * desde).toFixed(1);
+    const y1 = (Math.sin(angulo) * ry * desde).toFixed(1);
+    const x2 = (Math.cos(angulo) * rx * hasta).toFixed(1);
+    const y2 = (Math.sin(angulo) * ry * hasta).toFixed(1);
+    rayos.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#111111" stroke-width="${5 + (i % 3) * 2}" stroke-linecap="round"/>`);
+  }
+  return rayos.join('');
+}
+
+// Estrellita de cinco puntas, de las que rodean al estallido.
+function estrella(cx, cy, radio) {
+  const puntos = [];
+  for (let i = 0; i < 10; i++) {
+    const angulo = (Math.PI * i) / 5 - Math.PI / 2;
+    const r = i % 2 === 0 ? radio : radio * 0.42;
+    puntos.push(`${(cx + Math.cos(angulo) * r).toFixed(1)},${(cy + Math.sin(angulo) * r).toFixed(1)}`);
+  }
+  return `<polygon points="${puntos.join(' ')}" fill="#FFE212" stroke="#111111" stroke-width="4" stroke-linejoin="round"/>`;
+}
+
+// Onomatopeya estilo comic: estallido con semitono, rayos de velocidad,
+// estrellas y letras de color con doble contorno.
+let contadorSonido = 0;
+
 function onomatopeya(texto, { cx, cy, rotacion = -12 }) {
   const crudo = texto.toUpperCase().slice(0, 12);
   const limpio = escaparXml(crudo);
   const paleta = paletaSonido(crudo);
+  const idPatron = `semitono${contadorSonido++}`;
 
-  const fontSize = 96;
+  const fontSize = 104;
   const anchoTexto = crudo.length * fontSize * factorAncho();
-
-  // El estallido tiene que envolver al texto con aire alrededor
-  const rx = anchoTexto / 2 + fontSize * 0.85;
-  const ry = fontSize * 1.15;
+  const rx = anchoTexto / 2 + fontSize * 0.9;
+  const ry = fontSize * 1.2;
 
   return `<g transform="translate(${cx} ${cy}) rotate(${rotacion})">
-    <polygon points="${estallido(rx, ry)}" fill="${paleta.relleno}" stroke="#111111" stroke-width="10" stroke-linejoin="round" opacity="0.95"/>
-    <polygon points="${estallido(rx * 0.88, ry * 0.86)}" fill="none" stroke="${paleta.borde}" stroke-width="6" stroke-linejoin="round" opacity="0.9"/>
-    <g transform="skewX(-10)">
-      <text x="6" y="${fontSize * 0.36 + 8}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}" fill="#111111" opacity="0.45">${limpio}</text>
+    <defs>
+      <pattern id="${idPatron}" width="22" height="22" patternUnits="userSpaceOnUse">
+        <circle cx="6" cy="6" r="5" fill="${paleta.semitono}" opacity="0.55"/>
+      </pattern>
+    </defs>
+
+    ${rayosVelocidad(rx, ry)}
+
+    <polygon points="${estallido(rx, ry)}" fill="${paleta.estallido}" stroke="#111111" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="${estallido(rx, ry)}" fill="url(#${idPatron})" stroke="none"/>
+    <polygon points="${estallido(rx * 0.72, ry * 0.7)}" fill="#FFFFFF" stroke="none" opacity="0.55"/>
+
+    ${estrella(-rx * 0.92, -ry * 0.78, 26)}
+    ${estrella(rx * 0.95, ry * 0.7, 22)}
+    ${estrella(rx * 0.62, -ry * 0.98, 17)}
+
+    <g transform="skewX(-9)">
+      <text x="7" y="${fontSize * 0.36 + 9}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}" fill="#111111" opacity="0.5">${limpio}</text>
       <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
-            fill="${paleta.texto}" stroke="#111111" stroke-width="18" stroke-linejoin="round" paint-order="stroke">${limpio}</text>
+            fill="none" stroke="#111111" stroke-width="30" stroke-linejoin="round">${limpio}</text>
+      <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
+            fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round">${limpio}</text>
+      <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
+            fill="${paleta.texto}">${limpio}</text>
     </g>
   </g>`;
 }
@@ -336,8 +381,8 @@ async function capaTexto(escena, arte) {
 
   if (sonido) {
     // Tamaño aproximado del estallido, para buscarle un hueco despejado
-    const ancho = sonido.length * 96 * factorAncho() + 190;
-    const alto = 230;
+    const ancho = sonido.length * 104 * factorAncho() + 230;
+    const alto = 300;
     const media = ancho / 2 + 20;
     const izq = Math.max(media, VINETA_W * 0.28);
     const der = Math.min(VINETA_W - media, VINETA_W * 0.72);
