@@ -224,19 +224,24 @@ function cartuchoNarracion(texto, { x, y, maxAncho }) {
   };
 }
 
-// Paleta del estallido segun el tipo de sonido. Un golpe y un maullido no
-// deben verse igual.
-const PALETAS_SONIDO = [
-  { test: /BOOM|BANG|CRASH|POW|PUM|BUM|CRACK|PLAF|ZAS|SMASH|WHAM/, estallido: '#F2B233', semitono: '#E8112D', texto: '#E8112D' },
-  { test: /ZUM|SWOOSH|WHOOSH|FIU|SWISH|VROOM|ZZZ|SHH|CLIC|CLICK/,  estallido: '#F2B233', semitono: '#0A66C2', texto: '#0A66C2' },
-  { test: /GUAU|MIAU|ÑAM|NAM|JAJA|AAAH|UFF|SNIF|MUA/,              estallido: '#F2B233', semitono: '#00A34A', texto: '#00A34A' }
-];
-const PALETA_SONIDO_DEFECTO = { estallido: '#F2B233', semitono: '#E8112D', texto: '#E8112D' };
+// Aspecto del estallido según el estilo de dibujo del cómic. Un ¡BOOM! con
+// colores planos y saturados desentona en una acuarela o en un noir.
+const ESTILO_SONIDO = {
+  americano:  { estallido: '#F2B233', semitono: '#E8112D', texto: '#E8112D', borde: '#111111', trazo: 11, rayos: true, estrellas: true, semitonoVisible: true },
+  caricatura: { estallido: '#FFD23F', semitono: '#FF6B35', texto: '#E8112D', borde: '#111111', trazo: 12, rayos: true, estrellas: true, semitonoVisible: true },
+  retro:      { estallido: '#F4D35E', semitono: '#EE964B', texto: '#C1121F', borde: '#3D2B1F', trazo: 10, rayos: true, estrellas: true, semitonoVisible: true },
+  pixar:      { estallido: '#4CC9F0', semitono: '#4361EE', texto: '#FFFFFF', borde: '#1B2A5B', trazo: 11, rayos: true, estrellas: true, semitonoVisible: false },
+  chibi:      { estallido: '#FFC8DD', semitono: '#BDE0FE', texto: '#C9184A', borde: '#7A4E68', trazo: 9,  rayos: false, estrellas: true, semitonoVisible: false },
 
-function paletaSonido(texto) {
-  const limpio = texto.toUpperCase();
-  return PALETAS_SONIDO.find(p => p.test.test(limpio)) || PALETA_SONIDO_DEFECTO;
-}
+  // Blanco y negro: el color rompería por completo la página
+  manga:      { estallido: '#FFFFFF', semitono: '#000000', texto: '#111111', borde: '#111111', trazo: 10, rayos: true, estrellas: false, semitonoVisible: true },
+  noir:       { estallido: '#F2F2F2', semitono: '#000000', texto: '#111111', borde: '#000000', trazo: 12, rayos: true, estrellas: false, semitonoVisible: false },
+
+  // Acuarela: sin contornos duros ni brillos
+  acuarela:   { estallido: '#CDB4DB', semitono: '#A8DADC', texto: '#3D405B', borde: '#6B705C', trazo: 6,  rayos: false, estrellas: false, semitonoVisible: false }
+};
+
+const SONIDO_POR_DEFECTO = ESTILO_SONIDO.americano;
 
 // Poligono en forma de estrella irregular: el estallido clasico del comic.
 function estallido(rx, ry, puntas = 14) {
@@ -244,7 +249,6 @@ function estallido(rx, ry, puntas = 14) {
   for (let i = 0; i < puntas * 2; i++) {
     const angulo = (Math.PI * i) / puntas;
     const esPunta = i % 2 === 0;
-    // Variacion determinista: mismo sonido, mismo estallido
     const variacion = 1 + (i % 3) * 0.08 - (i % 5) * 0.05;
     const factor = (esPunta ? 1 : 0.6) * variacion;
     coords.push(`${(Math.cos(angulo) * rx * factor).toFixed(1)},${(Math.sin(angulo) * ry * factor).toFixed(1)}`);
@@ -252,8 +256,19 @@ function estallido(rx, ry, puntas = 14) {
   return coords.join(' ');
 }
 
+// Nube redondeada, para los estilos sin aristas (acuarela, chibi)
+function nubeSonido(rx, ry, lobulos = 11) {
+  const coords = [];
+  for (let i = 0; i < lobulos * 2; i++) {
+    const angulo = (Math.PI * i) / lobulos;
+    const factor = i % 2 === 0 ? 1 : 0.86;
+    coords.push(`${(Math.cos(angulo) * rx * factor).toFixed(1)},${(Math.sin(angulo) * ry * factor).toFixed(1)}`);
+  }
+  return coords.join(' ');
+}
+
 // Rayos de velocidad: lineas finas que salen del estallido hacia fuera.
-function rayosVelocidad(rx, ry, cantidad = 18) {
+function rayosVelocidad(rx, ry, color = '#111111', cantidad = 18) {
   const rayos = [];
   for (let i = 0; i < cantidad; i++) {
     const angulo = (Math.PI * 2 * i) / cantidad + 0.15;
@@ -263,30 +278,29 @@ function rayosVelocidad(rx, ry, cantidad = 18) {
     const y1 = (Math.sin(angulo) * ry * desde).toFixed(1);
     const x2 = (Math.cos(angulo) * rx * hasta).toFixed(1);
     const y2 = (Math.sin(angulo) * ry * hasta).toFixed(1);
-    rayos.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#111111" stroke-width="${5 + (i % 3) * 2}" stroke-linecap="round"/>`);
+    rayos.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${5 + (i % 3) * 2}" stroke-linecap="round"/>`);
   }
   return rayos.join('');
 }
 
 // Estrellita de cinco puntas, de las que rodean al estallido.
-function estrella(cx, cy, radio) {
+function estrella(cx, cy, radio, relleno, borde) {
   const puntos = [];
   for (let i = 0; i < 10; i++) {
     const angulo = (Math.PI * i) / 5 - Math.PI / 2;
     const r = i % 2 === 0 ? radio : radio * 0.42;
     puntos.push(`${(cx + Math.cos(angulo) * r).toFixed(1)},${(cy + Math.sin(angulo) * r).toFixed(1)}`);
   }
-  return `<polygon points="${puntos.join(' ')}" fill="#FFE212" stroke="#111111" stroke-width="4" stroke-linejoin="round"/>`;
+  return `<polygon points="${puntos.join(' ')}" fill="${relleno}" stroke="${borde}" stroke-width="4" stroke-linejoin="round"/>`;
 }
 
-// Onomatopeya estilo comic: estallido con semitono, rayos de velocidad,
-// estrellas y letras de color con doble contorno.
 let contadorSonido = 0;
 
-function onomatopeya(texto, { cx, cy, rotacion = -12 }) {
+// Onomatopeya al gusto del estilo de dibujo elegido.
+function onomatopeya(texto, { cx, cy, rotacion = -12, estilo = 'americano' }) {
   const crudo = texto.toUpperCase().slice(0, 12);
   const limpio = escaparXml(crudo);
-  const paleta = paletaSonido(crudo);
+  const paleta = ESTILO_SONIDO[estilo] || SONIDO_POR_DEFECTO;
   const idPatron = `semitono${contadorSonido++}`;
 
   const fontSize = 104;
@@ -294,33 +308,47 @@ function onomatopeya(texto, { cx, cy, rotacion = -12 }) {
   const rx = anchoTexto / 2 + fontSize * 0.9;
   const ry = fontSize * 1.2;
 
-  return `<g transform="translate(${cx} ${cy}) rotate(${rotacion})">
-    <defs>
-      <pattern id="${idPatron}" width="22" height="22" patternUnits="userSpaceOnUse">
-        <circle cx="6" cy="6" r="5" fill="${paleta.semitono}" opacity="0.55"/>
-      </pattern>
-    </defs>
+  const forma = paleta.rayos ? estallido(rx, ry) : nubeSonido(rx, ry);
+  const formaInterior = paleta.rayos ? estallido(rx * 0.72, ry * 0.7) : nubeSonido(rx * 0.72, ry * 0.7);
 
-    ${rayosVelocidad(rx, ry)}
+  const capas = [];
 
-    <polygon points="${estallido(rx, ry)}" fill="${paleta.estallido}" stroke="#111111" stroke-width="11" stroke-linejoin="round"/>
-    <polygon points="${estallido(rx, ry)}" fill="url(#${idPatron})" stroke="none"/>
-    <polygon points="${estallido(rx * 0.72, ry * 0.7)}" fill="#FFFFFF" stroke="none" opacity="0.55"/>
+  if (paleta.rayos) capas.push(rayosVelocidad(rx, ry, paleta.borde));
 
-    ${estrella(-rx * 0.92, -ry * 0.78, 26)}
-    ${estrella(rx * 0.95, ry * 0.7, 22)}
-    ${estrella(rx * 0.62, -ry * 0.98, 17)}
+  capas.push(`<polygon points="${forma}" fill="${paleta.estallido}" stroke="${paleta.borde}" stroke-width="${paleta.trazo}" stroke-linejoin="round"/>`);
 
-    <g transform="skewX(-9)">
-      <text x="7" y="${fontSize * 0.36 + 9}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}" fill="#111111" opacity="0.5">${limpio}</text>
-      <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
-            fill="none" stroke="#111111" stroke-width="30" stroke-linejoin="round">${limpio}</text>
-      <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
-            fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round">${limpio}</text>
-      <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
-            fill="${paleta.texto}">${limpio}</text>
-    </g>
-  </g>`;
+  if (paleta.semitonoVisible) {
+    capas.push(`<defs><pattern id="${idPatron}" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="6" cy="6" r="5" fill="${paleta.semitono}" opacity="0.5"/>
+    </pattern></defs>`);
+    capas.push(`<polygon points="${forma}" fill="url(#${idPatron})" stroke="none"/>`);
+  }
+
+  capas.push(`<polygon points="${formaInterior}" fill="#FFFFFF" stroke="none" opacity="${paleta.rayos ? 0.5 : 0.35}"/>`);
+
+  if (paleta.estrellas) {
+    capas.push(estrella(-rx * 0.92, -ry * 0.78, 26, paleta.estallido, paleta.borde));
+    capas.push(estrella(rx * 0.95, ry * 0.7, 22, paleta.estallido, paleta.borde));
+  }
+
+  capas.push(`<g transform="skewX(-9)">
+    <text x="7" y="${fontSize * 0.36 + 9}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}" fill="${paleta.borde}" opacity="0.45">${limpio}</text>
+    <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
+          fill="none" stroke="${paleta.borde}" stroke-width="${paleta.trazo * 2.6}" stroke-linejoin="round">${limpio}</text>
+    <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
+          fill="none" stroke="#FFFFFF" stroke-width="${paleta.trazo * 1.4}" stroke-linejoin="round">${limpio}</text>
+    <text x="0" y="${fontSize * 0.36}" text-anchor="middle" font-family="${FUENTE_IMPACTO}" font-size="${fontSize}"
+          fill="${paleta.texto}">${limpio}</text>
+  </g>`);
+
+  return `<g transform="translate(${cx} ${cy}) rotate(${rotacion})">${capas.join('')}</g>`;
+}
+
+// Cuanto se pisan dos rectangulos, en pixeles cuadrados.
+function areaSolapada(a, b) {
+  const ancho = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const alto = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return ancho > 0 && alto > 0 ? ancho * alto : 0;
 }
 
 // Que tan "cargada" esta una region del dibujo. Un valor bajo significa fondo
@@ -343,21 +371,8 @@ async function detalleDeZona(arte, left, top, width, height) {
   }
 }
 
-// Cuánto se pisan dos rectángulos, en píxeles cuadrados.
-function areaSolapada(a, b) {
-  const ancho = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-  const alto = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-  return ancho > 0 && alto > 0 ? ancho * alto : 0;
-}
-
-// Localiza la cara del personaje por color de piel.
-//
-// Es lo único que de verdad no se puede tapar. El centro de masa del detalle no
-// sirve: en un primer plano cae en el torso y deja la cara desprotegida, que es
-// justo donde se estaba poniendo el globo.
-//
-// Se trabaja sobre una miniatura: basta para saber dónde está la cara y evita
-// recorrer millones de píxeles.
+// Localiza la cara por tono de piel. Solo sirve en estilos a color: en manga y
+// noir devuelve null y entra en juego localizarFigura.
 async function localizarCara(arte) {
   const LADO = 64;
 
@@ -376,7 +391,6 @@ async function localizarCara(arte) {
         const i = (y * LADO + x) * canales;
         const r = data[i], g = data[i + 1], b = data[i + 2];
 
-        // Regla clásica de tono piel, algo relajada para ilustraciones
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
         const esPiel =
@@ -395,7 +409,6 @@ async function localizarCara(arte) {
       }
     }
 
-    // Muy pocos píxeles de piel, o demasiados (un fondo cálido): no es fiable
     const proporcion = total / (LADO * LADO);
     if (total < 12 || proporcion > 0.5 || maxX < 0) return null;
 
@@ -411,6 +424,59 @@ async function localizarCara(arte) {
   } catch {
     return null;
   }
+}
+
+// Recuadro que ocupa la figura dibujada, y dentro de él la zona de la cabeza.
+//
+// La detección por tono de piel no sirve en manga ni en noir, que son en blanco
+// y negro: ahí devolvía null y la cara quedaba sin proteger. Esto funciona en
+// cualquier estilo, porque se basa en dónde se concentra el detalle del dibujo.
+async function localizarFigura(arte) {
+  const COLS = 12;
+  const FILAS = 12;
+  const anchoCelda = Math.floor(VINETA_W / COLS);
+  const altoCelda = Math.floor(VINETA_H / FILAS);
+
+  const celdas = [];
+  let maximo = 0;
+
+  for (let f = 0; f < FILAS; f++) {
+    for (let c = 0; c < COLS; c++) {
+      const detalle = await detalleDeZona(arte, c * anchoCelda, f * altoCelda, anchoCelda, altoCelda);
+      const valor = Number.isFinite(detalle) ? detalle : 0;
+      celdas.push({ c, f, valor });
+      if (valor > maximo) maximo = valor;
+    }
+  }
+
+  if (!maximo) return null;
+
+  // Se quedan las celdas con detalle alto: son la figura y los objetos cercanos
+  const umbral = maximo * 0.55;
+  const activas = celdas.filter(x => x.valor >= umbral);
+  if (activas.length < 3) return null;
+
+  const minC = Math.min(...activas.map(x => x.c));
+  const maxC = Math.max(...activas.map(x => x.c));
+  const minF = Math.min(...activas.map(x => x.f));
+  const maxF = Math.max(...activas.map(x => x.f));
+
+  const cuerpo = {
+    x: minC * anchoCelda,
+    y: minF * altoCelda,
+    w: (maxC - minC + 1) * anchoCelda,
+    h: (maxF - minF + 1) * altoCelda
+  };
+
+  // La cabeza ocupa aproximadamente el tercio superior de la figura
+  const cabeza = {
+    x: cuerpo.x + cuerpo.w * 0.12,
+    y: cuerpo.y,
+    w: cuerpo.w * 0.76,
+    h: Math.max(cuerpo.h * 0.38, VINETA_H * 0.18)
+  };
+
+  return { cuerpo, cabeza };
 }
 
 // Estima dónde está el personaje: la zona con más detalle del dibujo.
@@ -489,7 +555,7 @@ async function mejorPosicion(arte, ancho, alto, candidatos, ocupados = [], cerca
 
 // Capa SVG con toda la rotulacion de una vineta, colocada sobre las zonas
 // mas despejadas del dibujo para no taparle la cara al protagonista.
-async function capaTexto(escena, arte) {
+async function capaTexto(escena, arte, estilo) {
   const partes = [];
   const ocupados = [];
   const dialogo = (escena.dialogo || '').trim();
@@ -503,34 +569,43 @@ async function capaTexto(escena, arte) {
   const sujeto = (dialogo || sonido) ? await localizarSujeto(arte) : null;
   const sujetoALaIzquierda = sujeto ? sujeto.x < VINETA_W / 2 : false;
 
-  // Zonas que no se pueden tapar: la cara detectada por tono de piel (con
-  // holgura generosa alrededor) y, como respaldo, la figura estimada.
+  // Zonas intocables. Se combinan tres fuentes porque ninguna es infalible:
+  // el tono de piel (falla en blanco y negro), el recuadro de la figura (falla
+  // con fondos muy cargados) y, como red de seguridad, la franja donde suele
+  // estar la cabeza.
   const prohibidas = [];
+  let cabezaConocida = null;
 
   if (dialogo || sonido) {
     const cara = await localizarCara(arte);
     if (cara) {
-      const holguraX = cara.w * 0.5;
-      const holguraY = cara.h * 0.5;
-      prohibidas.push({
-        x: cara.x - holguraX,
-        y: cara.y - holguraY,
-        w: cara.w + holguraX * 2,
-        h: cara.h + holguraY * 2
-      });
+      const hx = cara.w * 0.6;
+      const hy = cara.h * 0.6;
+      const zona = { x: cara.x - hx, y: cara.y - hy, w: cara.w + hx * 2, h: cara.h + hy * 2 };
+      prohibidas.push(zona);
+      cabezaConocida = zona;
     }
 
-    if (sujeto) {
-      prohibidas.push({
-        x: sujeto.x - VINETA_W * 0.2,
-        y: sujeto.y - VINETA_H * 0.26,
-        w: VINETA_W * 0.4,
-        h: VINETA_H * 0.55
-      });
+    const fig = await localizarFigura(arte);
+    if (fig) {
+      // La cabeza, con holgura generosa
+      const hx = fig.cabeza.w * 0.25;
+      const hy = fig.cabeza.h * 0.25;
+      const zonaCabeza = {
+        x: fig.cabeza.x - hx,
+        y: fig.cabeza.y - hy,
+        w: fig.cabeza.w + hx * 2,
+        h: fig.cabeza.h + hy * 2
+      };
+      prohibidas.push(zonaCabeza);
+      if (!cabezaConocida) cabezaConocida = zonaCabeza;
+
+      // El cuerpo también, aunque taparlo es menos grave que taparle la cara
+      prohibidas.push(fig.cuerpo);
     }
   }
 
-  const figura = prohibidas.length ? prohibidas[0] : null;
+  const figura = cabezaConocida;
 
   // La narración va arriba, en la esquina contraria al personaje
   if (narracion) {
@@ -619,7 +694,7 @@ async function capaTexto(escena, arte) {
       [...ocupados, ...prohibidas],
       sujeto ? { x: sujeto.x, y: VINETA_H * 0.8 } : null
     );
-    partes.push(onomatopeya(sonido, pos));
+    partes.push(onomatopeya(sonido, { ...pos, estilo }));
   }
 
   if (!partes.length) return null;
@@ -634,7 +709,7 @@ async function capaTexto(escena, arte) {
 // ---------------------------------------------------------------------------
 
 // Recibe los buffers PNG de cada viñeta y devuelve la página terminada en base64.
-export async function componerPagina(vinetas, escenas) {
+export async function componerPagina(vinetas, escenas, estilo = 'americano') {
   // Medir la fuente real antes de calcular cajas de texto
   await medirAnchoChar();
 
@@ -666,7 +741,7 @@ export async function componerPagina(vinetas, escenas) {
     capas.push({ input: arte, top: y, left: x });
 
     // Rotulacion encima del arte, esquivando las zonas con detalle
-    const texto = await capaTexto(escenas[i] || {}, arte);
+    const texto = await capaTexto(escenas[i] || {}, arte, estilo);
     if (texto) {
       capas.push({ input: await sharp(texto).png().toBuffer(), top: y, left: x });
     }

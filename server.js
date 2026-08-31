@@ -26,7 +26,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
 
 // Sirve para comprobar de un vistazo que el proceso corre el codigo actual.
 // "vinetas" = guion + una imagen por vineta + rotulacion con tipografia real.
-const MOTOR = 'vinetas-v19';
+const MOTOR = 'vinetas-v20';
 
 // Carpeta donde vive todo lo que debe sobrevivir.
 // En Render el disco del contenedor se borra en cada deploy: hay que montar un
@@ -239,14 +239,22 @@ Reglas:
     escenas[i].narracion = '';
   });
 
-  // 3. Onomatopeyas solo en las viñetas con acción, y no en todas.
-  const conSonido = escenas
+  // 3. Onomatopeyas salteadas: nunca en viñetas seguidas y como mucho en la
+  //    mitad de la página. Si aparecen en todas, dejan de tener fuerza.
+  const candidatas = escenas
     .map((e, i) => ({ i, tieneTexto: !!((e.narracion || '') + (e.dialogo || '')).trim() }))
     .filter(({ i }) => (escenas[i].onomatopeya || '').trim())
     .sort((a, b) => Number(a.tieneTexto) - Number(b.tieneTexto));
 
-  conSonido.slice(MAX_ONOMATOPEYAS).forEach(({ i }) => {
-    escenas[i].onomatopeya = '';
+  const aceptadas = [];
+  for (const { i } of candidatas) {
+    if (aceptadas.length >= MAX_ONOMATOPEYAS) break;
+    if (aceptadas.some(j => Math.abs(j - i) < 2)) continue;   // ni contigua
+    aceptadas.push(i);
+  }
+
+  escenas.forEach((escena, i) => {
+    if (!aceptadas.includes(i)) escena.onomatopeya = '';
   });
 
   return {
@@ -518,7 +526,8 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
     // Paso 3: armado de la página y rotulación con tipografía real
     const processedImageBase64 = await componerPagina(
       vinetas.map(v => v || relleno),
-      escenas
+      escenas,
+      estilo
     );
 
     // Copia que sirve el QR (esta carpeta sí se va rotando)
