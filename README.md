@@ -140,8 +140,9 @@ La ubicación se controla con `STORAGE_DIR`. Si se deja vacía, se usa la raíz 
 Hay tres cosas que **hay que** tener en cuenta:
 
 **1. El disco es efímero.** Render borra el sistema de archivos en cada deploy y en cada
-reinicio. Sin un disco persistente perderías todas las historias y los QR viejos dejarían de
-funcionar. Monta un **Disk** y apunta `STORAGE_DIR` a su Mount Path:
+reinicio. Sin un disco persistente perderías todas las historias y **los QR ya entregados
+darían 404**. Está comprobado: un cómic generado desaparece en menos de un minuto. Monta un
+**Disk** y apunta `STORAGE_DIR` a su Mount Path:
 
 | Variable | Valor |
 |---|---|
@@ -211,8 +212,16 @@ Genera la página de cómic.
 { "total": 12, "historias": [{ "id": "comic_...", "fecha": "...", "sexo": "hombre", "estilo": "noir", "historia": "..." }] }
 ```
 
+### `GET /c/:id`
+Página del cómic, pensada para el celular: es la URL que va dentro del QR. Muestra la
+imagen y ofrece descargarla.
+
+### `GET /c/:id/imagen.jpg`
+La imagen del cómic. Se sirve desde `historias/`, así que **el QR sigue funcionando
+aunque el cómic ya haya salido de `downloads/`**.
+
 ### `GET /downloads/:filename`
-Sirve el cómic generado (es la URL que va dentro del QR).
+Copia reciente del cómic (solo los últimos 30).
 
 ### `GET /download/:filename`
 Igual, pero fuerza la descarga. El nombre se valida contra `comic_<timestamp>.jpg`.

@@ -9,7 +9,6 @@ import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import QRCode from 'qrcode';
 import { componerPagina, comprobarFuentes, NUM_VINETAS } from './comic.js';
-import { hayMongo, probarConexion, guardarComic, obtenerImagen, listarComics, contarComics } from './db.js';
 
 dotenv.config();
 
@@ -497,9 +496,9 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
     await cleanOldFiles();
 
     const base = PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-    // Con MongoDB el QR apunta a una página propia del cómic, que lee la imagen
-    // de la base de datos. Sin MongoDB, al archivo en disco.
-    const downloadUrl = hayMongo ? `${base}/c/${id}` : `${base}/downloads/${filename}`;
+    // El QR apunta a una página propia del cómic, más cómoda en el celular que
+    // el archivo suelto: muestra la imagen y ofrece descargarla.
+    const downloadUrl = `${base}/c/${id}`;
     console.log('URL de descarga generada:', downloadUrl);
 
     // Copia permanente en carpeta (útil en local)
@@ -521,25 +520,6 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
       console.error('No se pudo archivar la historia:', error.message);
     }
 
-    // Copia en base de datos: es la que sobrevive a los reinicios de Render y
-    // la que hace que el QR siga funcionando horas después.
-    if (hayMongo) {
-      try {
-        await guardarComic({
-          id,
-          sexo,
-          estilo,
-          historia,
-          apariencia,
-          personaje,
-          escenas,
-          imagen: Buffer.from(processedImageBase64, 'base64')
-        });
-        console.log('Cómic guardado en MongoDB:', id);
-      } catch (error) {
-        console.error('No se pudo guardar en MongoDB:', error.message);
-      }
-    }
 
     const qrCode = await QRCode.toDataURL(downloadUrl);
 
@@ -583,22 +563,12 @@ app.get('/api/health', async (req, res) => {
   const fuentes = await comprobarFuentes();
 
   let historiasGuardadas = 0;
-  let mongo = { configurado: hayMongo, ok: false, detalle: 'MONGODB_URI no configurada' };
-
-  if (hayMongo) {
-    const prueba = await probarConexion();
-    mongo = prueba.ok
-      ? { configurado: true, ok: true, comics: prueba.total, detalle: 'los cómics sobreviven a los reinicios' }
-      : { configurado: true, ok: false, detalle: `sin conexión: ${prueba.motivo}` };
-    historiasGuardadas = prueba.ok ? prueba.total : 0;
-  } else {
-    try {
-      const indice = path.join(HISTORIAS_DIR, 'index.jsonl');
-      if (fs.existsSync(indice)) {
-        historiasGuardadas = fs.readFileSync(indice, 'utf8').split('\n').filter(Boolean).length;
-      }
-    } catch { /* si no se puede leer, se reporta 0 */ }
-  }
+  try {
+    const indice = path.join(HISTORIAS_DIR, 'index.jsonl');
+    if (fs.existsSync(indice)) {
+      historiasGuardadas = fs.readFileSync(indice, 'utf8').split('\n').filter(Boolean).length;
+    }
+  } catch { /* si no se puede leer, se reporta 0 */ }
 
   res.json({
     status: 'OK',
@@ -612,48 +582,51 @@ app.get('/api/health', async (req, res) => {
         ? 'la rotulación tiene fuentes disponibles'
         : 'SIN FUENTES: los globos saldrían vacíos'
     },
-    mongodb: mongo,
     almacenamiento: {
       dir: STORAGE_DIR,
-      persistente: hayMongo ? true : !!process.env.STORAGE_DIR,
+      persistente: !!process.env.STORAGE_DIR,
       historiasGuardadas,
-      detalle: hayMongo
-        ? 'los cómics se guardan en MongoDB'
-        : (process.env.STORAGE_DIR
-            ? 'STORAGE_DIR configurado'
-            : 'SIN STORAGE_DIR NI MONGODB_URI: en Render los cómics se borran al reiniciar y el QR quedará en 404')
+      detalle: process.env.STORAGE_DIR
+        ? 'STORAGE_DIR configurado: los cómics sobreviven a los reinicios'
+        : 'SIN STORAGE_DIR: en Render los cómics se borran al reiniciar y el QR quedará en 404'
     },
     urlPublica: PUBLIC_URL || null
   });
 });
 
-// Imagen del cómic, servida desde la base de datos.
-app.get('/c/:id/imagen.jpg', async (req, res) => {
+// Ruta en disco del cómic. Se busca en historias/ (permanente) y, si no está,
+// en downloads/ (que se va rotando).
+function rutaComic(id) {
+  const permanente = path.join(HISTORIAS_DIR, id, 'comic.jpg');
+  if (fs.existsSync(permanente)) return permanente;
+
+  const temporal = path.join(DOWNLOAD_DIR, `${id}.jpg`);
+  if (fs.existsSync(temporal)) return temporal;
+
+  return null;
+}
+
+// Imagen del cómic.
+app.get('/c/:id/imagen.jpg', (req, res) => {
   if (!/^comic_\d+$/.test(req.params.id)) {
     return res.status(400).json({ error: 'Identificador inválido' });
   }
 
-  try {
-    const imagen = await obtenerImagen(req.params.id);
-    if (!imagen) return res.status(404).json({ error: 'Cómic no encontrado' });
+  const ruta = rutaComic(req.params.id);
+  if (!ruta) return res.status(404).json({ error: 'Cómic no encontrado' });
 
-    res.set('Content-Type', imagen.tipo);
-    res.set('Cache-Control', 'public, max-age=31536000, immutable');
-    res.set('Content-Disposition', `inline; filename="${req.params.id}.jpg"`);
-    res.send(imagen.buffer);
-  } catch (error) {
-    res.status(500).json({ error: 'No se pudo leer el cómic', details: error.message });
-  }
+  res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  res.set('Content-Disposition', `inline; filename="${req.params.id}.jpg"`);
+  res.type('image/jpeg').sendFile(ruta);
 });
 
 // Página que abre el QR en el celular: el cómic y un botón para guardarlo.
-app.get('/c/:id', async (req, res) => {
+app.get('/c/:id', (req, res) => {
   const id = req.params.id;
   if (!/^comic_\d+$/.test(id)) return res.status(400).send('Identificador inválido');
 
   try {
-    const imagen = await obtenerImagen(id);
-    if (!imagen) {
+    if (!rutaComic(id)) {
       return res.status(404).send(`<!doctype html><html lang="es"><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Cómic no encontrado</title></head>
@@ -705,26 +678,10 @@ app.get('/c/:id', async (req, res) => {
 });
 
 // Listado del archivo de historias, de la más reciente a la más antigua.
-app.get('/api/historias', async (req, res) => {
+app.get('/api/historias', (req, res) => {
   try {
-    if (hayMongo) {
-      const docs = await listarComics();
-      return res.json({
-        origen: 'mongodb',
-        total: docs.length,
-        historias: docs.map(d => ({
-          id: d._id,
-          fecha: d.fecha,
-          sexo: d.sexo,
-          estilo: d.estilo,
-          historia: d.historia,
-          url: `${PUBLIC_URL}/c/${d._id}`
-        }))
-      });
-    }
-
     const indice = path.join(HISTORIAS_DIR, 'index.jsonl');
-    if (!fs.existsSync(indice)) return res.json({ origen: 'disco', total: 0, historias: [] });
+    if (!fs.existsSync(indice)) return res.json({ total: 0, historias: [] });
 
     const historias = fs.readFileSync(indice, 'utf8')
       .split('\n')
@@ -733,7 +690,7 @@ app.get('/api/historias', async (req, res) => {
       .filter(Boolean)
       .reverse();
 
-    res.json({ origen: 'disco', total: historias.length, historias });
+    res.json({ total: historias.length, historias });
   } catch (error) {
     res.status(500).json({ error: 'No se pudo leer el archivo de historias', details: error.message });
   }
@@ -783,16 +740,9 @@ app.listen(PORT, async () => {
   if (!PUBLIC_URL) {
     console.warn('⚠️  Sin PUBLIC_URL ni RENDER_EXTERNAL_URL: si abres la app en localhost, el QR no funcionará desde un celular.');
   }
-  if (hayMongo) {
-    const prueba = await probarConexion();
-    if (prueba.ok) {
-      console.log(`   MongoDB: conectado (${prueba.total} cómics guardados)`);
-    } else {
-      console.error(`❌ MongoDB configurado pero SIN CONEXIÓN: ${prueba.motivo}`);
-      console.error('   Revisa MONGODB_URI y que la IP del servidor esté permitida en Atlas.');
-    }
-  } else if (!process.env.STORAGE_DIR && process.env.RENDER) {
-    console.warn('⚠️  Sin MONGODB_URI ni STORAGE_DIR: en Render los cómics se borran al reiniciar y los QR ya entregados darán 404.');
+  if (!process.env.STORAGE_DIR && process.env.RENDER) {
+    console.warn('⚠️  Sin STORAGE_DIR: en Render los cómics se borran al reiniciar y los QR ya entregados darán 404.');
+    console.warn('   Monta un Disk y apunta STORAGE_DIR a su Mount Path.');
   }
   const fuentes = await comprobarFuentes();
   if (fuentes.ok) {
