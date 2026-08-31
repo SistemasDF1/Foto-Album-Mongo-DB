@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.ico?v=2" sizes="any">
     <link rel="icon" type="image/svg+xml" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
     <link rel="apple-touch-icon" href="/img/mongodb/MongoDB_Logomark_SpringGreen.svg">
-    <link rel="stylesheet" href="style.css?v=24">
+    <link rel="stylesheet" href="style.css?v=25">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
@@ -724,8 +724,8 @@
             { id: 'noir',      name: 'Noir',       img: 'img/estilos/noir.png' },
             { id: 'chibi',     name: 'Chibi',      img: 'img/estilos/chibi.png' },
             { id: 'acuarela',  name: 'Acuarela',   img: 'img/estilos/acuarela.png' },
-            { id: 'pixar',     name: '3D Animado', img: 'img/estilos/pixar.png' },
-            { id: 'retro',     name: 'Retro 60s',  emoji: '📻', color: 'linear-gradient(135deg, #ffd166, #ef476f)' }
+            { id: 'retro',     name: 'Retro 60s',  img: 'img/estilos/retro.png' },
+            { id: 'pixar',     name: '3D Animado', img: 'img/estilos/pixar.png' }
         ];
 
         function cargarEstilos() {
@@ -736,11 +736,8 @@
                 const div = document.createElement('div');
                 div.className = 'style-option';
                 div.style.cssText = 'padding:14px;background:#ffffff;border:2px solid #e9ecef;border-radius:15px;cursor:pointer;transition:all 0.3s ease;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;';
-                const muestra = estilo.img
-                    ? '<img src="' + estilo.img + '" alt="' + estilo.name + '" loading="lazy" class="style-thumb">'
-                    : '<div class="style-thumb" style="background:' + estilo.color + ';display:flex;align-items:center;justify-content:center;font-size:2rem;">' + estilo.emoji + '</div>';
-
-                div.innerHTML = muestra + '<span style="font-size:0.9rem;font-weight:700;color:#001E2B;">' + estilo.name + '</span>';
+                div.innerHTML = '<img src="' + estilo.img + '" alt="' + estilo.name + '" loading="lazy" class="style-thumb">' +
+                                '<span style="font-size:0.9rem;font-weight:700;color:#001E2B;">' + estilo.name + '</span>';
 
                 div.addEventListener('click', () => {
                     document.querySelectorAll('.style-option').forEach(opt => opt.classList.remove('seleccionado'));
@@ -898,7 +895,7 @@
     </div>
 </div>
 
-    <script src="app.js?v=24"></script>
+    <script src="app.js?v=25"></script>
     <script>
         function reiniciarProceso() {
             // Oculta las pantallas del generador
