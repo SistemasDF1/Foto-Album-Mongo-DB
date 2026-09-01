@@ -297,13 +297,22 @@ function estrella(cx, cy, radio, relleno, borde) {
 let contadorSonido = 0;
 
 // Onomatopeya al gusto del estilo de dibujo elegido.
-function onomatopeya(texto, { cx, cy, rotacion = -12, estilo = 'americano' }) {
+// Tamaño que ocupará el estallido, para poder buscarle sitio antes de dibujarlo.
+function medirSonido(texto, fontSize) {
+  const crudo = texto.toUpperCase().slice(0, 12);
+  const anchoTexto = crudo.length * fontSize * factorAncho();
+  const rx = anchoTexto / 2 + fontSize * 0.9;
+  const ry = fontSize * 1.2;
+  // Los rayos y las estrellas sobresalen del cuerpo del estallido
+  return { ancho: rx * 2 * 1.25, alto: ry * 2 * 1.25, rx, ry };
+}
+
+function onomatopeya(texto, { cx, cy, rotacion = -12, estilo = 'americano', fontSize = 104 }) {
   const crudo = texto.toUpperCase().slice(0, 12);
   const limpio = escaparXml(crudo);
   const paleta = ESTILO_SONIDO[estilo] || SONIDO_POR_DEFECTO;
   const idPatron = `semitono${contadorSonido++}`;
 
-  const fontSize = 104;
   const anchoTexto = crudo.length * fontSize * factorAncho();
   const rx = anchoTexto / 2 + fontSize * 0.9;
   const ry = fontSize * 1.2;
@@ -726,27 +735,66 @@ async function capaTexto(escena, arte, estilo) {
   }
 
   if (sonido) {
-    const ancho = sonido.length * 104 * factorAncho() + 230;
-    const alto = 300;
-    const media = ancho / 2 + 20;
-
     const prohibidas = [...ocupados];
     if (figura) prohibidas.push(figura);
 
-    const candidatos = [];
-    for (const fx of [0.18, 0.34, 0.5, 0.66, 0.82]) {
-      for (const fy of [0.55, 0.7, 0.85]) {
-        const cx = Math.min(Math.max(VINETA_W * fx, media), VINETA_W - media);
-        candidatos.push({ cx, cy: VINETA_H * fy });
+    // Se prueban tamaños decrecientes hasta dar con uno que quepa sin tocar la
+    // cara. Un ¡ROAR! enorme no cabe en una viñeta con un primer plano, y antes
+    // se colocaba igualmente encima del rostro.
+    let colocado = null;
+
+    for (const tam of [104, 88, 74, 62, 52]) {
+      const medida = medirSonido(sonido, tam);
+      const media = medida.ancho / 2 + 16;
+
+      if (media * 2 > VINETA_W - margen) continue;
+
+      const candidatos = [];
+      for (const fx of [0.16, 0.3, 0.5, 0.7, 0.84]) {
+        for (const fy of [0.42, 0.56, 0.7, 0.84]) {
+          const cx = Math.min(Math.max(VINETA_W * fx, media), VINETA_W - media);
+          const cy = VINETA_H * fy;
+          if (cy - medida.alto / 2 < margen) continue;
+          if (cy + medida.alto / 2 > VINETA_H - margen) continue;
+          candidatos.push({ cx, cy });
+        }
       }
+      if (!candidatos.length) continue;
+
+      // Solo valen los que no rozan la cara
+      const limpios = zonaCara
+        ? candidatos.filter(c => areaSolapada(
+            { x: c.cx - medida.ancho / 2, y: c.cy - medida.alto / 2, w: medida.ancho, h: medida.alto },
+            zonaCara
+          ) === 0)
+        : candidatos;
+
+      if (!limpios.length) continue;
+
+      const pos = await mejorPosicion(
+        arte, medida.ancho, medida.alto, limpios, prohibidas,
+        { x: centroFigura, y: VINETA_H * 0.82 },
+        zonaCara
+      );
+      colocado = { pos, fontSize: tam };
+      break;
     }
 
-    const pos = await mejorPosicion(
-      arte, ancho, alto, candidatos, prohibidas,
-      { x: centroFigura, y: VINETA_H * 0.82 },
-      zonaCara
-    );
-    partes.push(onomatopeya(sonido, { ...pos, estilo }));
+    // Si ni encogiendo cabe sin tocar la cara, se pone pequeña en la esquina
+    // inferior más despejada.
+    if (!colocado) {
+      const tam = 52;
+      const medida = medirSonido(sonido, tam);
+      const media = medida.ancho / 2 + 16;
+      const candidatos = [
+        { cx: Math.max(media, margen + media), cy: VINETA_H - medida.alto / 2 - margen },
+        { cx: Math.min(VINETA_W - media, VINETA_W - margen - media), cy: VINETA_H - medida.alto / 2 - margen }
+      ];
+      const pos = await mejorPosicion(arte, medida.ancho, medida.alto, candidatos, prohibidas, null, zonaCara);
+      colocado = { pos, fontSize: tam };
+    }
+
+    partes.push(onomatopeya(sonido, { ...colocado.pos, estilo, fontSize: colocado.fontSize }));
   }
 
   if (!partes.length) return null;
