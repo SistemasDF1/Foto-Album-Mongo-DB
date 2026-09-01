@@ -130,8 +130,8 @@ function partirLineas(texto, maxChars) {
 
 // Calcula el tamaño que ocupará un globo, para poder ubicarlo antes de dibujarlo.
 // Si con el tamaño pedido no cabría en la viñeta, reduce la fuente hasta que quepa.
-function medirGlobo(texto, { maxChars = 20, fontSize = 46 } = {}) {
-  const anchoMaximo = VINETA_W - 80;
+function medirGlobo(texto, { maxChars = 20, fontSize = 46, anchoDisponible = null } = {}) {
+  const anchoMaximo = anchoDisponible || (VINETA_W - 80);
   let tam = fontSize;
 
   for (let intento = 0; intento < 8; intento++) {
@@ -142,7 +142,7 @@ function medirGlobo(texto, { maxChars = 20, fontSize = 46 } = {}) {
     const rx = anchoTexto / 2 + 46;
     const ry = (lineas.length * lineH) / 2 + 40;
 
-    if (rx * 2 <= anchoMaximo || tam <= 26) {
+    if (rx * 2 <= anchoMaximo || tam <= 22) {
       return { lineas, lineH, rx, ry, ancho: rx * 2, alto: ry * 2, fontSize: tam };
     }
     tam -= 4;
@@ -155,8 +155,8 @@ function medirGlobo(texto, { maxChars = 20, fontSize = 46 } = {}) {
 
 // Globo de diálogo. La cola apunta al personaje: un globo cuya cola señala al
 // vacío rompe la lectura, porque no se sabe quién habla.
-function globoDialogo(texto, { cx, cy, maxChars = 20, fontSize = 46, hacia = null }) {
-  const medida = medirGlobo(texto, { maxChars, fontSize });
+function globoDialogo(texto, { cx, cy, maxChars = 20, fontSize = 46, hacia = null, anchoDisponible = null }) {
+  const medida = medirGlobo(texto, { maxChars, fontSize, anchoDisponible });
   const { lineas, lineH, rx, ry } = medida;
   fontSize = medida.fontSize;
 
@@ -565,52 +565,29 @@ async function capaTexto(escena, arte, estilo) {
   const margen = 40;
   let cartuchoAlto = 0;
 
-  // Dónde está el personaje: de ahí depende toda la composición
-  const sujeto = (dialogo || sonido) ? await localizarSujeto(arte) : null;
-  const sujetoALaIzquierda = sujeto ? sujeto.x < VINETA_W / 2 : false;
-
-  // Zonas intocables. Se combinan tres fuentes porque ninguna es infalible:
-  // el tono de piel (falla en blanco y negro), el recuadro de la figura (falla
-  // con fondos muy cargados) y, como red de seguridad, la franja donde suele
-  // estar la cabeza.
-  const prohibidas = [];
-  let cabezaConocida = null;
+  // Localizar al personaje: la figura completa y su cabeza
+  let figura = null;
+  let cabeza = null;
 
   if (dialogo || sonido) {
-    const cara = await localizarCara(arte);
-    if (cara) {
-      const hx = cara.w * 0.6;
-      const hy = cara.h * 0.6;
-      const zona = { x: cara.x - hx, y: cara.y - hy, w: cara.w + hx * 2, h: cara.h + hy * 2 };
-      prohibidas.push(zona);
-      cabezaConocida = zona;
-    }
-
     const fig = await localizarFigura(arte);
     if (fig) {
-      // La cabeza, con holgura generosa
-      const hx = fig.cabeza.w * 0.25;
-      const hy = fig.cabeza.h * 0.25;
-      const zonaCabeza = {
-        x: fig.cabeza.x - hx,
-        y: fig.cabeza.y - hy,
-        w: fig.cabeza.w + hx * 2,
-        h: fig.cabeza.h + hy * 2
-      };
-      prohibidas.push(zonaCabeza);
-      if (!cabezaConocida) cabezaConocida = zonaCabeza;
-
-      // El cuerpo también, aunque taparlo es menos grave que taparle la cara
-      prohibidas.push(fig.cuerpo);
+      figura = fig.cuerpo;
+      cabeza = fig.cabeza;
     }
+
+    // El tono de piel afina la posición de la cara cuando el estilo es a color
+    const cara = await localizarCara(arte);
+    if (cara) cabeza = cara;
   }
 
-  const figura = cabezaConocida;
+  const centroFigura = figura ? figura.x + figura.w / 2 : VINETA_W / 2;
+  const figuraALaIzquierda = centroFigura < VINETA_W / 2;
 
-  // La narración va arriba, en la esquina contraria al personaje
+  // La narración va arriba, en la esquina contraria a la figura
   if (narracion) {
     const provisional = cartuchoNarracion(narracion, { x: margen, y: margen, maxAncho: VINETA_W * 0.58 });
-    const x = sujetoALaIzquierda ? VINETA_W - provisional.ancho - margen : margen;
+    const x = figuraALaIzquierda ? VINETA_W - provisional.ancho - margen : margen;
     const cartucho = cartuchoNarracion(narracion, { x, y: margen, maxAncho: VINETA_W * 0.58 });
 
     cartuchoAlto = cartucho.alto;
@@ -619,52 +596,102 @@ async function capaTexto(escena, arte, estilo) {
   }
 
   if (dialogo) {
-    const medida = medirGlobo(dialogo);
-    const minX = medida.rx + margen;
-    const maxX = VINETA_W - medida.rx - margen;
+    const techo = margen + (cartuchoAlto ? cartuchoAlto + 46 : 0);
 
-    const SEPARACION = 46;
-    const techo = margen + (cartuchoAlto ? cartuchoAlto + SEPARACION : 0);
-    const arriba = techo + medida.ry;
+    // Huecos reales a cada lado de la figura y por encima de ella
+    const huecoIzq = figura ? Math.max(0, figura.x - margen) : VINETA_W / 2;
+    const huecoDer = figura ? Math.max(0, VINETA_W - (figura.x + figura.w) - margen) : VINETA_W / 2;
+    const huecoArriba = figura ? figura.y - techo : VINETA_H * 0.35;
 
-    // Rejilla amplia de posiciones: cuantas más haya, más fácil es encontrar
-    // una que no tape al personaje.
-    const columnas = [];
-    for (const f of [0, 0.25, 0.5, 0.75, 1]) {
-      const x = minX + (maxX - minX) * f;
-      if (x >= minX - 1 && x <= maxX + 1) columnas.push(x);
-    }
+    // Se prueba cada hueco midiendo el globo con ESE ancho, y se descarta el que
+    // no lo admita. Sin esta comprobación el globo se desbordaba del hueco y
+    // acababa igualmente sobre la cara.
+    const opciones = [];
 
-    const filas = [];
-    for (const f of [0, 0.18, 0.36, 0.55]) {
-      const y = arriba + (VINETA_H - arriba - medida.ry - 90) * f;
-      filas.push(y);
-    }
-
-    const candidatos = [];
-    for (const cy of filas) {
-      for (const cx of columnas) {
-        if (cy - medida.ry < margen) continue;
-        if (cy + medida.ry + 70 > VINETA_H) continue;
-        candidatos.push({ cx, cy });
+    if (huecoDer > 180) {
+      const m = medirGlobo(dialogo, { anchoDisponible: huecoDer - 24 });
+      if (m.ancho <= huecoDer - 10) {
+        opciones.push({ medida: m, cx: figura.x + figura.w + huecoDer / 2, lateral: true });
       }
     }
-    if (!candidatos.length) candidatos.push({ cx: VINETA_W / 2, cy: arriba });
 
-    // Prohibido sobre la figura; premiado estar cerca de su cabeza
-    const cabeza = { x: sujeto.x, y: Math.max(sujeto.y - VINETA_H * 0.22, margen) };
-    const pos = await mejorPosicion(
-      arte, medida.ancho, medida.alto, candidatos,
-      [...ocupados, ...prohibidas],
-      cabeza
-    );
+    if (huecoIzq > 180) {
+      const m = medirGlobo(dialogo, { anchoDisponible: huecoIzq - 24 });
+      if (m.ancho <= huecoIzq - 10) {
+        opciones.push({ medida: m, cx: margen + huecoIzq / 2, lateral: true });
+      }
+    }
 
-    // La cola apunta a la boca: bajo la cara si se detectó, o al torso si no
-    const destino = figura
-      ? { x: figura.x + figura.w / 2, y: figura.y + figura.h * 0.72 }
-      : { x: sujeto.x, y: Math.max(sujeto.y - VINETA_H * 0.12, pos.cy + medida.ry + 40) };
+    if (huecoArriba > 200) {
+      const m = medirGlobo(dialogo, { anchoDisponible: VINETA_W - margen * 2 });
+      if (m.alto <= huecoArriba - 20) {
+        opciones.push({ medida: m, cx: VINETA_W / 2, arriba: true });
+      }
+    }
 
-    partes.push(globoDialogo(dialogo, { ...pos, hacia: destino }));
+    // Gana el globo más grande que quepa; entre iguales, el lateral
+    opciones.sort((a, b) => (b.medida.fontSize - a.medida.fontSize) || (Number(b.lateral) - Number(a.lateral)));
+
+    let pos;
+    let medida;
+
+    if (opciones.length) {
+      const elegida = opciones[0];
+      medida = elegida.medida;
+
+      let cy;
+      if (elegida.arriba) {
+        cy = techo + medida.ry;
+      } else {
+        // A la altura de la cabeza, para que la cola sea corta
+        const alturaCabeza = cabeza ? cabeza.y + cabeza.h * 0.4 : VINETA_H * 0.32;
+        cy = Math.min(Math.max(alturaCabeza, techo + medida.ry), VINETA_H - medida.ry - 110);
+      }
+
+      pos = {
+        cx: Math.min(Math.max(elegida.cx, medida.rx + margen), VINETA_W - medida.rx - margen),
+        cy
+      };
+    } else {
+      // No hay hueco limpio: se busca por coste la posición que menos estorbe,
+      // con la cara pesando mucho más que el resto del dibujo.
+      medida = medirGlobo(dialogo);
+
+      const prohibidas = [...ocupados];
+      if (cabeza) {
+        const hx = cabeza.w * 0.35, hy = cabeza.h * 0.35;
+        prohibidas.push({ x: cabeza.x - hx, y: cabeza.y - hy, w: cabeza.w + hx * 2, h: cabeza.h + hy * 2 });
+      }
+
+      const candidatos = [];
+      for (const fx of [0.16, 0.32, 0.5, 0.68, 0.84]) {
+        for (const fy of [0.14, 0.3, 0.48, 0.66]) {
+          const cx = Math.min(Math.max(VINETA_W * fx, medida.rx + margen), VINETA_W - medida.rx - margen);
+          const cy = VINETA_H * fy;
+          if (cy - medida.ry < techo) continue;
+          if (cy + medida.ry + 90 > VINETA_H) continue;
+          candidatos.push({ cx, cy });
+        }
+      }
+      if (!candidatos.length) candidatos.push({ cx: VINETA_W / 2, cy: techo + medida.ry });
+
+      pos = await mejorPosicion(
+        arte, medida.ancho, medida.alto, candidatos, prohibidas,
+        cabeza ? { x: cabeza.x + cabeza.w / 2, y: cabeza.y + cabeza.h } : null
+      );
+    }
+
+    // La cola apunta a la cabeza, que es quien habla
+    const destino = cabeza
+      ? { x: cabeza.x + cabeza.w / 2, y: cabeza.y + cabeza.h * 0.75 }
+      : { x: centroFigura, y: pos.cy + medida.ry + 80 };
+
+    partes.push(globoDialogo(dialogo, {
+      cx: pos.cx,
+      cy: pos.cy,
+      hacia: destino,
+      anchoDisponible: medida.ancho + 1   // conserva el tamaño ya calculado
+    }));
 
     ocupados.push({
       x: pos.cx - medida.rx,
@@ -679,20 +706,21 @@ async function capaTexto(escena, arte, estilo) {
     const alto = 300;
     const media = ancho / 2 + 20;
 
-    // El estallido acompaña la acción, pero tampoco puede taparle la cara
+    const prohibidas = [...ocupados];
+    if (cabeza) prohibidas.push(cabeza);
+    if (figura) prohibidas.push(figura);
 
     const candidatos = [];
-    for (const fx of [0.22, 0.4, 0.6, 0.78]) {
-      for (const fy of [0.58, 0.72, 0.86]) {
+    for (const fx of [0.18, 0.34, 0.5, 0.66, 0.82]) {
+      for (const fy of [0.55, 0.7, 0.85]) {
         const cx = Math.min(Math.max(VINETA_W * fx, media), VINETA_W - media);
         candidatos.push({ cx, cy: VINETA_H * fy });
       }
     }
 
     const pos = await mejorPosicion(
-      arte, ancho, alto, candidatos,
-      [...ocupados, ...prohibidas],
-      sujeto ? { x: sujeto.x, y: VINETA_H * 0.8 } : null
+      arte, ancho, alto, candidatos, prohibidas,
+      { x: centroFigura, y: VINETA_H * 0.82 }
     );
     partes.push(onomatopeya(sonido, { ...pos, estilo }));
   }
