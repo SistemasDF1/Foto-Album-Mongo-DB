@@ -518,28 +518,31 @@ async function localizarSujeto(arte) {
 // texto ya colocadas. El solapamiento pesa mucho más que el detalle del dibujo:
 // antes se calculaban posiciones "que no deberían" chocar, y bastaba un cartucho
 // de tres líneas para que globo y narración acabaran pegados.
-async function mejorPosicion(arte, ancho, alto, candidatos, ocupados = [], cerca = null) {
+async function mejorPosicion(arte, ancho, alto, candidatos, ocupados = [], cerca = null, cara = null) {
   let mejor = candidatos[0];
   let mejorPuntaje = Number.POSITIVE_INFINITY;
 
-  // Distancia máxima posible dentro de la viñeta, para normalizar la cercanía
   const diagonal = Math.hypot(VINETA_W, VINETA_H);
+  const areaCaja = ancho * alto;
 
   for (const c of candidatos) {
     const caja = { x: c.cx - ancho / 2, y: c.cy - alto / 2, w: ancho, h: alto };
 
-    // Margen de respiro alrededor de lo ya colocado y de la figura del personaje
-    const solape = ocupados.reduce((total, o) => total + areaSolapada(caja, {
+    // Tapar la cara es lo peor que puede pasar: pesa un orden de magnitud más
+    // que cualquier otra cosa, para que solo se acepte si no queda alternativa.
+    const solapeCara = cara ? areaSolapada(caja, cara) : 0;
+
+    const solapeOtros = ocupados.reduce((total, o) => total + areaSolapada(caja, {
       x: o.x - 18, y: o.y - 18, w: o.w + 36, h: o.h + 36
     }), 0);
 
     const detalle = await detalleDeZona(arte, caja.x, caja.y, ancho, alto);
 
-    // Tapar algo pesa muchísimo más que cualquier otra consideración
-    let puntaje = detalle + (solape / (ancho * alto)) * 10000;
+    let puntaje =
+      detalle +
+      (solapeOtros / areaCaja) * 10000 +
+      (solapeCara / areaCaja) * 200000;
 
-    // Entre las posiciones que no tapan, gana la más cercana a quien habla:
-    // así el globo queda junto al personaje sin encimarse.
     if (cerca) {
       const distancia = Math.hypot(c.cx - cerca.x, c.cy - cerca.y);
       puntaje += (distancia / diagonal) * 60;
@@ -580,6 +583,15 @@ async function capaTexto(escena, arte, estilo) {
     const cara = await localizarCara(arte);
     if (cara) cabeza = cara;
   }
+
+  // Zona intocable alrededor de la cara. Se extiende bastante hacia abajo:
+  // un globo pegado a la barbilla se lee como si tapara la cara.
+  const zonaCara = cabeza ? {
+    x: cabeza.x - cabeza.w * 0.45,
+    y: cabeza.y - cabeza.h * 0.55,
+    w: cabeza.w * 1.9,
+    h: cabeza.h * 2.1
+  } : null;
 
   const centroFigura = figura ? figura.x + figura.w / 2 : VINETA_W / 2;
   const figuraALaIzquierda = centroFigura < VINETA_W / 2;
@@ -622,6 +634,21 @@ async function capaTexto(escena, arte, estilo) {
       }
     }
 
+    // Se descartan los laterales que, pese a caber, pisarían la cara
+    if (zonaCara) {
+      for (let i = opciones.length - 1; i >= 0; i--) {
+        const o = opciones[i];
+        if (!o.lateral) continue;
+        const caja = {
+          x: o.cx - o.medida.rx,
+          y: (cabeza ? cabeza.y : VINETA_H * 0.3) - o.medida.ry,
+          w: o.medida.ancho,
+          h: o.medida.alto
+        };
+        if (areaSolapada(caja, zonaCara) > 0) opciones.splice(i, 1);
+      }
+    }
+
     if (huecoArriba > 200) {
       const m = medirGlobo(dialogo, { anchoDisponible: VINETA_W - margen * 2 });
       if (m.alto <= huecoArriba - 20) {
@@ -655,17 +682,13 @@ async function capaTexto(escena, arte, estilo) {
     } else {
       // No hay hueco limpio: se busca por coste la posición que menos estorbe,
       // con la cara pesando mucho más que el resto del dibujo.
-      medida = medirGlobo(dialogo);
-
-      const prohibidas = [...ocupados];
-      if (cabeza) {
-        const hx = cabeza.w * 0.35, hy = cabeza.h * 0.35;
-        prohibidas.push({ x: cabeza.x - hx, y: cabeza.y - hy, w: cabeza.w + hx * 2, h: cabeza.h + hy * 2 });
-      }
+      // En un primer plano el personaje llena la viñeta: el globo se encoge
+      // para caber en los bordes, que es donde menos estorba.
+      medida = medirGlobo(dialogo, { anchoDisponible: VINETA_W * 0.62 });
 
       const candidatos = [];
-      for (const fx of [0.16, 0.32, 0.5, 0.68, 0.84]) {
-        for (const fy of [0.14, 0.3, 0.48, 0.66]) {
+      for (const fx of [0.15, 0.3, 0.5, 0.7, 0.85]) {
+        for (const fy of [0.1, 0.22, 0.36, 0.52, 0.68, 0.82]) {
           const cx = Math.min(Math.max(VINETA_W * fx, medida.rx + margen), VINETA_W - medida.rx - margen);
           const cy = VINETA_H * fy;
           if (cy - medida.ry < techo) continue;
@@ -676,8 +699,9 @@ async function capaTexto(escena, arte, estilo) {
       if (!candidatos.length) candidatos.push({ cx: VINETA_W / 2, cy: techo + medida.ry });
 
       pos = await mejorPosicion(
-        arte, medida.ancho, medida.alto, candidatos, prohibidas,
-        cabeza ? { x: cabeza.x + cabeza.w / 2, y: cabeza.y + cabeza.h } : null
+        arte, medida.ancho, medida.alto, candidatos, ocupados,
+        cabeza ? { x: cabeza.x + cabeza.w / 2, y: cabeza.y + cabeza.h * 1.6 } : null,
+        zonaCara
       );
     }
 
@@ -707,7 +731,6 @@ async function capaTexto(escena, arte, estilo) {
     const media = ancho / 2 + 20;
 
     const prohibidas = [...ocupados];
-    if (cabeza) prohibidas.push(cabeza);
     if (figura) prohibidas.push(figura);
 
     const candidatos = [];
@@ -720,7 +743,8 @@ async function capaTexto(escena, arte, estilo) {
 
     const pos = await mejorPosicion(
       arte, ancho, alto, candidatos, prohibidas,
-      { x: centroFigura, y: VINETA_H * 0.82 }
+      { x: centroFigura, y: VINETA_H * 0.82 },
+      zonaCara
     );
     partes.push(onomatopeya(sonido, { ...pos, estilo }));
   }
