@@ -30,6 +30,10 @@ MongoDB-selected-assets/
 # ya optimizadas
 Stylo_dibujo/
 
+# Originales de las figuras del paso "¿Cómo te dibujamos?": las copias que
+# usa la app están en public/img/personaje/
+personaje/
+
 # Documentos de trabajo
 *.docx
 ~$*
@@ -39,6 +43,7 @@ Stylo_dibujo/
 public/img/*
 !public/img/mongodb/
 !public/img/estilos/
+!public/img/personaje/
 public/kyndryl/
 public/qrious.min.js
 public/icons/
@@ -52,3 +57,4 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+.env.bak
